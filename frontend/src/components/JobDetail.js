@@ -58,6 +58,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser }) {
     fetchProjectNotes();
     fetchTimeEntries();
     fetchReceipts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job.id]);
 
   const fetchProjectNotes = async () => {
