@@ -65,7 +65,7 @@ function TimePicker({ value, onChange, label }) {
 
 function parseLocalDate(dateStr) {
   if (!dateStr) return null;
-  const [y, m, d] = dateStr.split('-').map(Number);
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number);
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d);
 }

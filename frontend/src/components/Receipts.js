@@ -19,13 +19,13 @@ function fmtMoney(v) {
 
 function fmtDate(d) {
   if (!d) return '';
-  const dt = new Date(d + 'T00:00:00');
+  const dt = new Date(String(d).slice(0, 10) + 'T00:00:00');
   return isNaN(dt) ? d : dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function parseLocalDate(s) {
   if (!s) return null;
-  const [y, m, d] = s.split('-').map(Number);
+  const [y, m, d] = String(s).slice(0, 10).split('-').map(Number);
   if (!y || !m || !d) return null;
   return new Date(y, m - 1, d);
 }
