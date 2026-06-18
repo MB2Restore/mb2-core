@@ -1,0 +1,327 @@
+.timesheet {
+  margin-top: 28px;
+  border-top: 2px solid #eee;
+  padding-top: 20px;
+}
+
+.timesheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 10px;
+}
+
+.week-nav-btn {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.week-nav-btn:hover:not(:disabled) {
+  background: #e6e6e6;
+}
+
+.week-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.week-label {
+  text-align: center;
+  flex: 1;
+}
+
+.week-range {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.week-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #F26522;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+
+.timesheet-error {
+  background: #fde8e8;
+  color: #c0392b;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.timesheet-loading {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+}
+
+.timesheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ts-day {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ts-day-empty {
+  opacity: 0.6;
+}
+
+.ts-day-head {
+  display: flex;
+  align-items: center;
+  background: #f8f9fc;
+  padding: 10px 14px;
+  gap: 10px;
+}
+
+.ts-day-name {
+  font-weight: 600;
+  color: #1a1a2e;
+  min-width: 90px;
+}
+
+.ts-day-date {
+  color: #888;
+  font-size: 13px;
+  flex: 1;
+}
+
+.ts-day-total {
+  font-weight: 600;
+  color: #1a1a2e;
+  font-size: 14px;
+}
+
+.ts-entries {
+  padding: 4px 0;
+}
+
+.ts-entry {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-top: 1px solid #f2f2f2;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.ts-entry-time {
+  color: #555;
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+.ts-entry-job {
+  flex: 1;
+  color: #1a1a2e;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-entry-hrs {
+  font-weight: 600;
+  color: #555;
+  min-width: 48px;
+  text-align: right;
+}
+
+.ts-week-total {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 10px;
+  margin-top: 6px;
+}
+
+.ts-week-total-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.ts-week-total-sub {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b8bcc8;
+  font-weight: 400;
+}
+
+.ts-week-total-hrs {
+  color: #F26522;
+  font-size: 17px;
+}
+
+@media (max-width: 600px) {
+  .ts-day-name { min-width: 72px; font-size: 14px; }
+  .ts-entry { flex-wrap: wrap; }
+  .ts-entry-time { min-width: 120px; }
+}
+
+.timesheet-locked-note {
+  background: #fff7e6;
+  border: 1px solid #ffe0a3;
+  color: #8a5a00;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.ts-entry-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.ts-edit-btn,
+.ts-del-btn {
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.ts-edit-btn { background: #f0f0f0; color: #333; }
+.ts-edit-btn:hover { background: #e4e4e4; }
+.ts-del-btn { background: #fde8e8; color: #c0392b; }
+.ts-del-btn:hover { background: #fbd5d5; }
+
+.ts-edit-row {
+  padding: 12px 14px;
+  border-top: 1px solid #f2f2f2;
+  background: #f8f9fc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ts-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ts-edit-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.ts-edit-field select {
+  padding: 9px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}
+
+/* Split hour : minute AM/PM picker (matches the Log Time form) */
+.ts-time-parts {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ts-time-parts select {
+  padding: 9px 6px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.ts-time-colon { font-weight: 700; color: #555; }
+
+.ts-edit-times {
+  display: flex;
+  gap: 10px;
+}
+
+.ts-edit-times .ts-edit-field {
+  flex: 1;
+}
+
+.ts-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ts-save-btn {
+  background: #F26522;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ts-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ts-cancel-btn {
+  background: #eee;
+  color: #555;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.timesheet-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.timesheet-user-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timesheet-user-picker label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+
+.timesheet-user-picker select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+}

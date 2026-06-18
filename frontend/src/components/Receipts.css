@@ -1,0 +1,267 @@
+.receipts-container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.receipts-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+}
+
+.receipts-card h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.receipts-card .subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.error-message {
+  background: #fde8e8;
+  color: #c0392b;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.success-message {
+  background: #e8f8ef;
+  color: #1e8449;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.add-receipt-btn {
+  display: block;
+  width: 100%;
+  background: #F26522;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 24px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(242, 101, 34, 0.3);
+}
+
+.add-receipt-btn:hover { background: #d9551a; }
+
+.receipt-form {
+  background: #f8f9fc;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.receipt-form h3 { margin: 0 0 16px; color: #1a1a2e; }
+
+.receipt-form .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
+
+.receipt-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.receipt-form input,
+.receipt-form select,
+.receipt-form textarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.current-user-display {
+  padding: 11px 14px;
+  background: #f0f0f0;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.photo-input { background: #fff; }
+
+.photo-preview {
+  margin-top: 10px;
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  object-fit: contain;
+}
+
+.form-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+.rc-submit-btn {
+  background: #F26522; color: #fff; border: none;
+  border-radius: 8px; padding: 11px 22px; font-weight: 600; cursor: pointer;
+}
+.rc-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.rc-cancel-btn {
+  background: #eee; color: #555; border: none;
+  border-radius: 8px; padding: 11px 22px; font-weight: 600; cursor: pointer;
+}
+
+.receipts-list-section { margin-top: 28px; border-top: 1px solid #eee; padding-top: 20px; }
+
+.receipts-list-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px; margin-bottom: 12px;
+}
+.receipts-list-head h3 { margin: 0; color: #1a1a2e; }
+
+.receipts-user-picker { display: flex; flex-direction: column; gap: 4px; }
+.receipts-user-picker label { font-size: 12px; font-weight: 600; color: #555; }
+.receipts-user-picker select {
+  padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; min-width: 180px;
+}
+
+.loading-text, .empty-text { color: #999; text-align: center; padding: 16px; }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: #999;
+}
+.empty-state.empty-state-sm { padding: 32px 20px; }
+.empty-state .empty-icon {
+  font-size: 36px; line-height: 1; margin-bottom: 12px; opacity: 0.8;
+}
+.empty-state .empty-title {
+  font-size: 16px; font-weight: 700; color: #1a1a2e; margin: 0 0 4px;
+}
+.empty-state .empty-sub { font-size: 14px; color: #8a8a8a; margin: 0; }
+
+.receipts-total {
+  font-weight: 600; color: #1a1a2e; margin-bottom: 12px; font-size: 15px;
+}
+
+.receipts-grid { display: flex; flex-direction: column; gap: 12px; }
+
+.receipt-item {
+  display: flex; gap: 14px; padding: 12px;
+  border: 1px solid #eee; border-radius: 10px; background: #fff;
+}
+
+.receipt-thumb {
+  width: 90px; height: 90px; object-fit: cover;
+  border-radius: 8px; border: 1px solid #eee; flex-shrink: 0;
+}
+.receipt-thumb-link { display: block; }
+.receipt-no-photo {
+  display: flex; align-items: center; justify-content: center;
+  background: #f5f5f5; color: #aaa; font-size: 12px; text-align: center;
+}
+
+.receipt-info { flex: 1; min-width: 0; }
+.receipt-top { display: flex; justify-content: space-between; align-items: baseline; }
+.receipt-amount { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+.receipt-date { font-size: 13px; color: #888; }
+.receipt-vendor { font-weight: 600; color: #333; margin-top: 2px; }
+.receipt-job { font-size: 13px; color: #2c3e7a; margin-top: 2px; }
+.receipt-desc { font-size: 13px; color: #666; margin-top: 4px; }
+
+.receipt-actions { display: flex; gap: 8px; margin-top: 8px; }
+.r-edit-btn {
+  background: #f0f0f0; color: #333; border: none; border-radius: 6px;
+  padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.r-del-btn {
+  background: #fde8e8; color: #c0392b; border: none; border-radius: 6px;
+  padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .receipts-card { padding: 24px; }
+  .receipt-item { flex-direction: column; }
+  .receipt-thumb { width: 100%; height: 160px; }
+}
+
+/* View toggle (By Week / By Job) */
+.receipts-view-toggle {
+  display: inline-flex;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.rv-toggle-btn {
+  background: #fff;
+  border: none;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+}
+.rv-toggle-btn.active { background: #1a1a2e; color: #fff; }
+
+/* Week navigation */
+.receipts-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.receipts-week-nav .week-nav-btn {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.receipts-week-nav .week-nav-btn:hover:not(:disabled) { background: #e6e6e6; }
+.receipts-week-nav .week-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.receipts-week-nav .week-label { text-align: center; flex: 1; }
+.receipts-week-nav .week-range { font-size: 16px; font-weight: 600; color: #1a1a2e; }
+.receipts-week-nav .week-tag {
+  font-size: 11px; font-weight: 600; color: #F26522;
+  text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;
+}
+
+/* Job filter */
+.receipts-job-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.receipts-job-filter label { font-size: 12px; font-weight: 600; color: #555; }
+.receipts-job-filter select {
+  padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+  max-width: 320px;
+}
+
+/* Job group */
+.receipts-job-group { margin-bottom: 18px; }
+.receipts-job-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fc;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+.rjg-name { font-weight: 600; color: #1a1a2e; }
+.rjg-total { font-weight: 700; color: #1a1a2e; }

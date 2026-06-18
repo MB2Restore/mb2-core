@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment / secrets — NEVER commit these
+.env
+.env.local
+.env.*.local
+*/.env
+backend/.env
+frontend/.env
+
+# Database (local SQLite — not used in production)
+*.db
+*.sqlite
+*.sqlite3
+backend/mb2restore.db
+
+# Uploaded receipt photos (local disk — production uses Cloudflare R2)
+backend/uploads/
+uploads/
+
+# Build output
+frontend/build/
+build/
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.bak
+.vscode/
+.idea/

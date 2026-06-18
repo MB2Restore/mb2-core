@@ -1,0 +1,285 @@
+.time-tracking-container {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.time-tracking-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+}
+
+.time-tracking-card h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid #c62828;
+}
+
+.success-message {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  padding: 12px 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid #4caf50;
+}
+
+.clock-panel {
+  background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  padding: 30px;
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+}
+
+.clock-panel.active {
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+  border-color: #4caf50;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+}
+
+.clock-panel h3 {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #0C1015;
+  box-shadow: 0 0 0 3px rgba(12, 16, 21, 0.1);
+}
+
+/* Start / Stop time pickers side by side */
+.time-inputs {
+  display: flex;
+  gap: 16px;
+}
+.time-inputs .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Split hour : minute AM/PM dropdowns */
+.time-part-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.time-part {
+  padding: 12px 8px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+.time-part-hour { flex: 1; }
+.time-part-min { flex: 1; }
+.time-part-ampm { flex: 1.1; }
+.time-part:focus {
+  outline: none;
+  border-color: #0C1015;
+  box-shadow: 0 0 0 3px rgba(12, 16, 21, 0.1);
+}
+.time-colon {
+  font-weight: 700;
+  color: #555;
+}
+
+@media (max-width: 600px) {
+  .time-inputs { flex-direction: column; gap: 18px; }
+  /* Bigger tap targets on phones */
+  .time-part { padding: 14px 8px; font-size: 16px; }
+}
+
+/* Primary "+ Log Time" CTA */
+.add-entry-btn {
+  width: 100%;
+  background: #F26522;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.add-entry-btn:hover {
+  background: #d9551a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
+}
+
+.add-entry-btn:active {
+  transform: translateY(0);
+}
+
+/* Submit button inside the Log Time form */
+.submit-time-btn {
+  width: 100%;
+  background: #F26522;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.submit-time-btn:hover:not(:disabled) {
+  background: #d9551a;
+}
+
+.submit-time-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Separation between the Log Time button and the timesheet/export section below */
+.entry-form-container {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.job-info {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.job-info p {
+  margin: 6px 0;
+}
+
+.job-info strong {
+  color: #333;
+}
+
+.active-job-info {
+  background: white;
+  border: 2px solid #4caf50;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+.active-job-info p {
+  margin: 6px 0;
+}
+
+.active-job-info strong {
+  color: #2e7d32;
+}
+
+.elapsed-time {
+  text-align: center;
+  margin: 30px 0;
+  padding: 30px;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+}
+
+.timer {
+  font-size: 48px;
+  font-weight: bold;
+  color: #4caf50;
+  font-family: 'Courier New', monospace;
+  display: block;
+}
+
+.clock-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clock-in-btn {
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+}
+
+.clock-in-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(76, 175, 80, 0.3);
+}
+
+.clock-out-btn {
+  background: linear-gradient(135deg, #f44336 0%, #da190b 100%);
+  color: white;
+}
+
+.clock-out-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(244, 67, 54, 0.3);
+}
+
+@media (max-width: 768px) {
+  .time-tracking-card {
+    padding: 20px;
+  }
+
+  .time-tracking-card h2 {
+    font-size: 22px;
+  }
+}
