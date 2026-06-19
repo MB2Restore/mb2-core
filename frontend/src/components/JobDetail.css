@@ -532,3 +532,27 @@
 .jd-receipt-vendor { font-size: 14px; color: #333; margin-top: 2px; }
 .jd-receipt-person { font-size: 12px; color: #888; margin-top: 2px; }
 .jd-receipt-desc { font-size: 13px; color: #555; margin-top: 4px; }
+
+/* Next Steps rolling-log editor */
+.next-steps-current {
+  white-space: pre-wrap;
+  background: #fafafa;
+  border-left: 3px solid #F26522;
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  color: #333;
+  line-height: 1.5;
+}
+.next-steps-empty {
+  color: #999;
+  font-style: italic;
+  margin-bottom: 16px;
+}
+.next-steps-add label {
+  display: block;
+  font-weight: 600;
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 6px;
+}

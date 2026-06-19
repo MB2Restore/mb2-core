@@ -13,6 +13,8 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [receipts, setReceipts] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState('');
+  const [newNextSteps, setNewNextSteps] = useState('');
+  const [savingNextSteps, setSavingNextSteps] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loadingNotes, setLoadingNotes] = useState(false);
@@ -153,8 +155,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           mitigation_amount: editForm.mitigation_amount || null,
           repair_amount: editForm.repair_amount || null,
           other_amount: editForm.other_amount || null,
-          insurance_notes: editForm.insurance_notes,
-          next_steps: editForm.next_steps
+          insurance_notes: editForm.insurance_notes
         })
       });
 
@@ -199,6 +200,38 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  // Advance Next Steps: archive the current next step as a Project Note, then set the new one.
+  const handleAdvanceNextSteps = async () => {
+    if (!newNextSteps.trim()) { setError('Please enter the next step'); return; }
+    setSavingNextSteps(true);
+    setError('');
+    try {
+      const response = await fetch(`${apiUrl}/api/jobs/${job.id}/next-steps`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          next_steps: newNextSteps,
+          created_by: currentUser?.name || 'Team Member'
+        })
+      });
+      if (!response.ok) {
+        const d = await response.json().catch(() => ({}));
+        throw new Error(d.error || 'Failed to update next steps');
+      }
+      const data = await response.json();
+      setJobData(prev => ({ ...prev, next_steps: data.next_steps }));
+      setEditForm(prev => ({ ...prev, next_steps: data.next_steps }));
+      if (data.archivedNote) setProjectNotes(prev => [data.archivedNote, ...prev]);
+      setNewNextSteps('');
+      setMessage('Next steps updated');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingNextSteps(false);
     }
   };
 
@@ -696,27 +729,33 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         </div>
       ) : null}
 
-      {/* Next Steps Section */}
-      {isEditing || editForm.next_steps ? (
-        <div className="detail-section">
-          <h3>Next Steps</h3>
-          {isEditing ? (
-            <div className="form-group">
-              <textarea
-                name="next_steps"
-                value={editForm.next_steps}
-                onChange={handleEditChange}
-                placeholder="What happens next? Who's responsible? When?"
-                rows="12"
-              />
-            </div>
-          ) : (
-            <div className="notes-text">
-              {editForm.next_steps}
-            </div>
-          )}
-        </div>
-      ) : null}
+      {/* Next Steps Section — rolling log: setting a new one archives the old to Project Notes */}
+      <div className="detail-section">
+        <h3>Next Steps</h3>
+        {jobData.next_steps ? (
+          <div className="notes-text next-steps-current">{jobData.next_steps}</div>
+        ) : (
+          <p className="next-steps-empty">No next steps set yet.</p>
+        )}
+        {!isEditing && (
+          <div className="form-group next-steps-add">
+            <label>Update next steps</label>
+            <textarea
+              value={newNextSteps}
+              onChange={(e) => setNewNextSteps(e.target.value)}
+              placeholder="Enter the new next step… (the current one moves into Project Notes)"
+              rows="4"
+            />
+            <button
+              className="add-note-btn"
+              onClick={handleAdvanceNextSteps}
+              disabled={!newNextSteps.trim() || savingNextSteps}
+            >
+              {savingNextSteps ? 'Updating…' : 'Update Next Steps'}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Save Button (Editing Mode) */}
       {isEditing && (
@@ -727,8 +766,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         </div>
       )}
 
-      {/* Project Notes Section */}
-      {!isFieldView && (
+      {/* Project Notes Section — visible to everyone who can see the job */}
       <div className="detail-section">
         <h3>Project Notes</h3>
         <div className="form-group">
@@ -765,7 +803,6 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           </div>
         )}
       </div>
-      )}
 
       {/* Time Tracking Summary */}
       {!isFieldView && timeEntries.length > 0 && (

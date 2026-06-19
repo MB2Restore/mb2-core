@@ -462,6 +462,38 @@ app.post('/api/jobs/:jobId/notes', h(async (req, res) => {
   res.json({ id: noteId, job_id: req.params.jobId, note_text, created_by: created_by || 'Unknown', created_date: now });
 }));
 
+// Advance "Next Steps": push the CURRENT next_steps down into Project Notes (so the
+// history is preserved), then set the new next_steps text. Any logged-in user.
+// Returns the updated next_steps and the archived note (if one was created).
+app.post('/api/jobs/:jobId/next-steps', h(async (req, res) => {
+  const { next_steps, created_by } = req.body;
+  const newText = (next_steps || '').trim();
+  if (!newText) return res.status(400).json({ error: 'Next steps text is required' });
+
+  const jobId = req.params.jobId;
+  const job = await get('SELECT next_steps FROM jobs WHERE id = $1', [jobId]);
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+
+  const now = new Date().toISOString();
+  let archivedNote = null;
+
+  // Archive the existing next step as a project note (only if there was one)
+  const prev = (job.next_steps || '').trim();
+  if (prev) {
+    const noteId = uuidv4();
+    await run(
+      `INSERT INTO project_notes (id, job_id, note_text, created_by, created_date)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [noteId, jobId, prev, created_by || 'Unknown', now]
+    );
+    archivedNote = { id: noteId, job_id: jobId, note_text: prev, created_by: created_by || 'Unknown', created_date: now };
+  }
+
+  await run('UPDATE jobs SET next_steps = $1, updated_date = CURRENT_TIMESTAMP WHERE id = $2', [newText, jobId]);
+
+  res.json({ success: true, next_steps: newText, archivedNote });
+}));
+
 // ===== AUTH & USER ENDPOINTS =====
 // Passwords hashed with bcryptjs; sessions via signed JWT. Legacy plain-text
 // passwords auto-upgrade to bcrypt on first successful login. Roles: admin, office, field.
