@@ -21,7 +21,26 @@ const isBcryptHash = (str) => typeof str === 'string' && /^\$2[aby]\$/.test(str)
 const hashPassword = (plain) => bcrypt.hashSync(plain, 10);
 
 // Middleware
-app.use(cors());
+// CORS allowlist: only these origins may call the API. Add/adjust via the
+// CORS_ORIGINS env var (comma-separated) without changing code. Localhost is
+// always allowed for development. Requests with no Origin (curl, health checks,
+// same-origin) are allowed through.
+const defaultOrigins = [
+  'https://core.mb2restore.com',
+  'https://super-kangaroo-4e4b87.netlify.app'
+];
+const envOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+const allowedOrigins = new Set([...defaultOrigins, ...envOrigins]);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // non-browser or same-origin
+    if (origin.startsWith('http://localhost')) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS: ' + origin));
+  }
+}));
 app.use(bodyParser.json({ limit: '15mb' }));
 app.use(bodyParser.urlencoded({ limit: '15mb', extended: true }));
 

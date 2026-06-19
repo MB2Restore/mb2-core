@@ -819,8 +819,8 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
             {receipts.map((receipt) => (
               <div key={receipt.id} className="jd-receipt-row">
                 {receipt.photo_url ? (
-                  <a href={`${apiUrl}${receipt.photo_url}`} target="_blank" rel="noopener noreferrer">
-                    <img src={`${apiUrl}${receipt.photo_url}`} alt="Receipt" className="jd-receipt-thumb" />
+                  <a href={/^https?:\/\//i.test(receipt.photo_url) ? receipt.photo_url : `${apiUrl}${receipt.photo_url}`} target="_blank" rel="noopener noreferrer">
+                    <img src={/^https?:\/\//i.test(receipt.photo_url) ? receipt.photo_url : `${apiUrl}${receipt.photo_url}`} alt="Receipt" className="jd-receipt-thumb" />
                   </a>
                 ) : (
                   <div className="jd-receipt-thumb jd-receipt-nophoto">No photo</div>

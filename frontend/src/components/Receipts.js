@@ -110,6 +110,10 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
 
   const jobLabel = (r) => r.job_name || r.job_address || 'Job';
 
+  // R2 stores a full https URL; local disk stores a relative /uploads path.
+  // Only prepend the API base for relative paths.
+  const photoSrc = (u) => (!u ? '' : /^https?:\/\//i.test(u) ? u : `${apiUrl}${u}`);
+
   const flash = (m) => { setMessage(m); setTimeout(() => setMessage(''), 3000); };
 
   const handlePhoto = (e) => {
@@ -132,7 +136,7 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
       amount: r.amount != null ? String(r.amount) : '',
       description: r.description || '',
       photo: '',
-      photoPreview: r.photo_url ? `${apiUrl}${r.photo_url}` : ''
+      photoPreview: photoSrc(r.photo_url)
     });
     setShowForm(true); setError('');
   };
@@ -195,8 +199,8 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
   const renderReceiptCard = (r) => (
     <div key={r.id} className="receipt-item">
       {r.photo_url ? (
-        <a href={`${apiUrl}${r.photo_url}`} target="_blank" rel="noopener noreferrer" className="receipt-thumb-link">
-          <img src={`${apiUrl}${r.photo_url}`} alt="Receipt" className="receipt-thumb" />
+        <a href={photoSrc(r.photo_url)} target="_blank" rel="noopener noreferrer" className="receipt-thumb-link">
+          <img src={photoSrc(r.photo_url)} alt="Receipt" className="receipt-thumb" />
         </a>
       ) : (
         <div className="receipt-thumb receipt-no-photo">No photo</div>
