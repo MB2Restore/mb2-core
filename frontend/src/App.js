@@ -107,6 +107,14 @@ function App() {
     fetchJobs();
   };
 
+  const handleJobDeleted = (deletedId) => {
+    setJobs(prev => prev.filter(j => j.id !== deletedId));
+    setMessage('Job deleted');
+    setTimeout(() => setMessage(''), 3000);
+    setView('jobs');
+    fetchJobs();
+  };
+
   if (!authChecked) {
     return (
       <div className="app-loading">Loading...</div>
@@ -187,7 +195,7 @@ function App() {
         )}
 
         {view === 'detail' && selectedJob && (
-          <JobDetail job={selectedJob} apiUrl={API_URL} onBack={handleBackToList} currentUser={currentUser} />
+          <JobDetail job={selectedJob} apiUrl={API_URL} onBack={handleBackToList} currentUser={currentUser} token={token} onDeleted={handleJobDeleted} />
         )}
 
         {view === 'tracking' && (

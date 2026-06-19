@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './JobDetail.css';
 
-function JobDetail({ job, apiUrl, onBack, currentUser }) {
+function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   // Field staff get a limited, view-only job view (no financials/time/receipts/notes, no editing)
   const isFieldView = currentUser?.role === 'field';
+  // Office/Admin can delete jobs (e.g. duplicates or test records)
+  const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'office';
+  const [deleting, setDeleting] = useState(false);
   const [jobData, setJobData] = useState(job);
   const [projectNotes, setProjectNotes] = useState([]);
   const [timeEntries, setTimeEntries] = useState([]);
@@ -286,6 +289,30 @@ function JobDetail({ job, apiUrl, onBack, currentUser }) {
     (parseFloat(editForm.repair_amount) || 0) +
     (parseFloat(editForm.other_amount) || 0);
 
+  const handleDelete = async () => {
+    const label = jobData.nickname || jobData.address || 'this job';
+    if (!window.confirm(
+      `Delete "${label}"?\n\nThis permanently removes the job and all of its time entries, ` +
+      `receipts, and notes. This cannot be undone.`
+    )) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/jobs/${jobData.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Failed to delete job');
+      }
+      if (onDeleted) onDeleted(jobData.id);
+      else onBack();
+    } catch (err) {
+      setError(err.message);
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="job-detail-container">
       <button className="back-btn" onClick={onBack}>← Back to Jobs</button>
@@ -306,6 +333,15 @@ function JobDetail({ job, apiUrl, onBack, currentUser }) {
               onClick={() => setIsEditing(!isEditing)}
             >
               {isEditing ? 'Cancel' : 'Edit'}
+            </button>
+          )}
+          {canDelete && !isEditing && (
+            <button
+              className="delete-job-btn"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete Job'}
             </button>
           )}
         </div>

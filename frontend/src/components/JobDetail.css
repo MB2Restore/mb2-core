@@ -85,6 +85,30 @@
   box-shadow: 0 4px 10px rgba(242, 101, 34, 0.3);
 }
 
+/* Destructive action — distinct red, outlined so it's not mistaken for a primary button */
+.delete-job-btn {
+  background: #fff;
+  color: #c0392b;
+  border: 1px solid #e6b0aa;
+  padding: 10px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.delete-job-btn:hover:not(:disabled) {
+  background: #c0392b;
+  color: #fff;
+  border-color: #c0392b;
+}
+
+.delete-job-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -504,7 +528,7 @@
 .jd-receipt-info { flex: 1; min-width: 0; }
 .jd-receipt-top { display: flex; justify-content: space-between; align-items: baseline; }
 .jd-receipt-amount { font-size: 17px; font-weight: 700; color: #1a1a2e; }
-.jd-receipt-date { font-size: 13px; color: #888; }
-.jd-receipt-vendor { font-weight: 600; color: #333; margin-top: 2px; }
-.jd-receipt-person { font-size: 13px; color: #555; margin-top: 2px; }
-.jd-receipt-desc { font-size: 13px; color: #666; margin-top: 4px; }
+.jd-receipt-date { font-size: 12px; color: #888; }
+.jd-receipt-vendor { font-size: 14px; color: #333; margin-top: 2px; }
+.jd-receipt-person { font-size: 12px; color: #888; margin-top: 2px; }
+.jd-receipt-desc { font-size: 13px; color: #555; margin-top: 4px; }
