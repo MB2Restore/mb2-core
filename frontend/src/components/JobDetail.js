@@ -209,7 +209,12 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    // Postgres returns dates as full ISO timestamps; take just the date part and
+    // parse as local so the day doesn't shift across timezones.
+    const datePart = String(dateString).slice(0, 10);
+    const [y, m, d] = datePart.split('-').map(Number);
+    if (!y || !m || !d) return dateString;
+    const date = new Date(y, m - 1, d);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
   };
 
@@ -783,7 +788,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
               <div key={entry.id} className="entry-row">
                 <div className="entry-cell">
                   <small>Date</small>
-                  <p>{entry.date}</p>
+                  <p>{formatDate(entry.date)}</p>
                 </div>
                 <div className="entry-cell">
                   <small>User</small>
