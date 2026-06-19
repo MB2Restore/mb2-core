@@ -263,7 +263,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   };
 
   const totalTimeMinutes = timeEntries.reduce((sum, entry) => sum + (entry.duration_minutes || 0), 0);
-  const totalHours = (totalTimeMinutes / 60).toFixed(1);
+  const totalHours = (totalTimeMinutes / 60).toFixed(2);
   const totalExpenses = receipts.reduce((sum, receipt) => sum + (receipt.amount || 0), 0);
 
   const exportReceipts = () => {
@@ -796,7 +796,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                 </div>
                 <div className="entry-cell">
                   <small>Duration</small>
-                  <p>{entry.duration_minutes ? `${(entry.duration_minutes / 60).toFixed(1)} hrs` : 'In Progress'}</p>
+                  <p>{entry.duration_minutes ? `${(entry.duration_minutes / 60).toFixed(2)} hrs` : 'In Progress'}</p>
                 </div>
               </div>
             ))}
