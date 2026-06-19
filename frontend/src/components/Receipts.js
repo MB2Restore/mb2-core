@@ -116,12 +116,45 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
 
   const flash = (m) => { setMessage(m); setTimeout(() => setMessage(''), 3000); };
 
-  const handlePhoto = (e) => {
+  // Resize + compress the photo in the browser BEFORE upload, so field staff send
+  // a ~300KB image instead of a multi-MB phone photo. Scales the long edge down to
+  // MAX_EDGE and re-encodes as JPEG. Falls back to the raw file if anything fails.
+  const MAX_EDGE = 1600;
+  const JPEG_QUALITY = 0.75;
+
+  const compressImage = (file) => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          let { width, height } = img;
+          if (width > MAX_EDGE || height > MAX_EDGE) {
+            if (width >= height) { height = Math.round(height * (MAX_EDGE / width)); width = MAX_EDGE; }
+            else { width = Math.round(width * (MAX_EDGE / height)); height = MAX_EDGE; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          // White background so transparent PNGs don't go black when flattened to JPEG
+          resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+        } catch (err) {
+          resolve(reader.result); // fall back to original
+        }
+      };
+      img.onerror = () => resolve(reader.result);
+      img.src = reader.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+
+  const handlePhoto = async (e) => {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setForm(prev => ({ ...prev, photo: reader.result, photoPreview: reader.result }));
-    reader.readAsDataURL(file);
+    const dataUrl = await compressImage(file);
+    if (dataUrl) setForm(prev => ({ ...prev, photo: dataUrl, photoPreview: dataUrl }));
   };
 
   const change = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
