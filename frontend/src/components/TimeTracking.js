@@ -136,6 +136,11 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
       return;
     }
 
+    if (!formData.description || !formData.description.trim()) {
+      setError('Please enter a description of the work');
+      return;
+    }
+
     setError('');
 
     try {
@@ -330,13 +335,14 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
               )}
 
               <div className="form-group">
-                <label>Description (Optional)</label>
+                <label>Description</label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleFormChange}
                   placeholder="What did you work on?"
                   rows="3"
+                  required
                 />
               </div>
 

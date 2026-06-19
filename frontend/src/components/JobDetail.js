@@ -264,7 +264,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
 
   const totalTimeMinutes = timeEntries.reduce((sum, entry) => sum + (entry.duration_minutes || 0), 0);
   const totalHours = (totalTimeMinutes / 60).toFixed(2);
-  const totalExpenses = receipts.reduce((sum, receipt) => sum + (receipt.amount || 0), 0);
+  const totalExpenses = receipts.reduce((sum, receipt) => sum + (parseFloat(receipt.amount) || 0), 0);
 
   const exportReceipts = () => {
     const rows = [['Date', 'Person', 'Vendor', 'Amount', 'Description']];
