@@ -180,6 +180,10 @@
   .ts-day-name { min-width: 72px; font-size: 14px; }
   .ts-entry { flex-wrap: wrap; }
   .ts-entry-time { min-width: 120px; }
+
+  /* Stack Start above Stop on mobile so the AM/PM dropdown isn't cut off */
+  .ts-edit-times { flex-direction: column; gap: 14px; }
+  .ts-time-parts select { flex: 1; min-width: 0; }
 }
 
 .timesheet-locked-note {

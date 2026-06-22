@@ -7,7 +7,22 @@
 //   run(sql, params)  -> Promise<{ rowCount, rows }>
 //
 // SQL uses $1, $2, ... placeholders (Postgres), not '?'.
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// ---- Timezone-safe timestamp/date handling ----
+// By default the pg driver converts TIMESTAMP/DATE columns into JS Date objects
+// interpreted in the SERVER's timezone (Render runs in UTC). For this app, clock
+// times (clock_in/clock_out) and calendar dates are "wall-clock" values with no
+// timezone meaning — converting them shifts the displayed time (EDT -> GMT). So we
+// override the parsers to return the RAW value as a string, normalized to ISO form
+// (space -> 'T') so the existing frontend parsers keep working. No timezone math,
+// ever — what was entered is exactly what comes back.
+const OID_TIMESTAMP = 1114;        // timestamp without time zone
+const OID_TIMESTAMPTZ = 1184;      // timestamp with time zone
+const OID_DATE = 1082;             // date
+types.setTypeParser(OID_TIMESTAMP, (v) => (v == null ? v : String(v).replace(' ', 'T')));
+types.setTypeParser(OID_TIMESTAMPTZ, (v) => (v == null ? v : String(v).replace(' ', 'T')));
+types.setTypeParser(OID_DATE, (v) => v); // already 'YYYY-MM-DD'
 
 if (!process.env.DATABASE_URL) {
   console.warn(
