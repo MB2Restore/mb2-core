@@ -19,6 +19,11 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [error, setError] = useState('');
   const [loadingNotes, setLoadingNotes] = useState(false);
 
+  // Dates arrive from the DB as full ISO timestamps (e.g. "2026-03-14T00:00:00.000Z").
+  // <input type="date"> only accepts "YYYY-MM-DD" — anything else renders blank, which
+  // then gets saved back as null and wipes the date. Truncate to the date part here.
+  const toDateInput = (v) => (v ? String(v).slice(0, 10) : '');
+
   const [editForm, setEditForm] = useState({
     // Customer fields
     customer_name: job.customer_name || '',
@@ -29,12 +34,12 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     type: job.type || '',
     lead_source: job.lead_source || '',
     docusketch_url: job.docusketch_url || '',
-    date_received: job.date_received || '',
+    date_received: toDateInput(job.date_received),
     status: job.status,
     // Key dates
-    start_date: job.start_date || '',
-    date_completed: job.date_completed || '',
-    date_invoiced: job.date_invoiced || '',
+    start_date: toDateInput(job.start_date),
+    date_completed: toDateInput(job.date_completed),
+    date_invoiced: toDateInput(job.date_invoiced),
     // Financial
     mitigation_amount: job.mitigation_amount || '',
     repair_amount: job.repair_amount || '',
