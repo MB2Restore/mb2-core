@@ -99,9 +99,15 @@ function fmtRange(weekStart) {
 
 function fmtTime(dateTimeStr) {
   if (!dateTimeStr) return '--';
-  const d = new Date(dateTimeStr);
-  if (isNaN(d)) return '--';
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  // Read the clock time literally from the stored string — do NOT convert through
+  // the browser timezone (Postgres tags these as 'Z'/UTC, which would shift them).
+  const m = String(dateTimeStr).match(/T(\d{2}):(\d{2})/);
+  if (!m) return '--';
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${min} ${ampm}`;
 }
 
 function fmtHours(minutes) {
@@ -115,9 +121,9 @@ function labelFor(entry) {
 
 function timePartOf(dateTimeStr) {
   if (!dateTimeStr) return '';
-  const d = new Date(dateTimeStr);
-  if (isNaN(d)) return '';
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  // Pull HH:MM literally from the stored string (no timezone conversion).
+  const m = String(dateTimeStr).match(/T(\d{2}):(\d{2})/);
+  return m ? `${m[1]}:${m[2]}` : '';
 }
 
 // Lock rule for FIELD STAFF: current week always; previous week only through Mon EOD; older locked.

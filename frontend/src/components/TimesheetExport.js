@@ -32,9 +32,15 @@ function parseLocalDate(s) {
 }
 function fmtTime(dt) {
   if (!dt) return '';
-  const d = new Date(dt);
-  if (isNaN(d)) return '';
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  // Read the clock time literally from the stored string — no timezone conversion
+  // (Postgres tags these as 'Z'/UTC, which would shift the displayed time).
+  const m = String(dt).match(/T(\d{2}):(\d{2})/);
+  if (!m) return '';
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${min} ${ampm}`;
 }
 function labelFor(e) {
   if (e.job_id && CATEGORY_LABELS[e.job_id]) return CATEGORY_LABELS[e.job_id];
