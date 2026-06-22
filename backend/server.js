@@ -205,7 +205,10 @@ app.put('/api/customers/:id', h(async (req, res) => {
 
 app.get('/api/jobs', h(async (req, res) => {
   const rows = await all(`
-    SELECT j.*, c.name AS customer_name, c.phone AS customer_phone, c.address AS customer_address
+    SELECT j.*, c.name AS customer_name, c.phone AS customer_phone, c.address AS customer_address,
+      (SELECT pn.note_text FROM project_notes pn
+        WHERE pn.job_id = j.id
+        ORDER BY pn.created_date DESC LIMIT 1) AS latest_note
     FROM jobs j
     LEFT JOIN customers c ON j.customer_id = c.id
     ORDER BY j.created_date DESC

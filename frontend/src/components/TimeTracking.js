@@ -36,6 +36,7 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
   const TIME_CATEGORIES = [
     { id: 'category:pto', label: 'Paid Time Off' },
     { id: 'category:shop', label: 'Shop' },
+    { id: 'category:bizdev', label: 'Business Development' },
     { id: 'category:unpaid', label: 'Unpaid Time Off' },
     { id: 'category:lunch', label: 'Lunch' },
     { id: 'category:joblisted', label: 'Job Not Listed' }

@@ -13,8 +13,6 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [receipts, setReceipts] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState('');
-  const [newNextSteps, setNewNextSteps] = useState('');
-  const [savingNextSteps, setSavingNextSteps] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loadingNotes, setLoadingNotes] = useState(false);
@@ -45,8 +43,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     repair_amount: job.repair_amount || '',
     other_amount: job.other_amount || '',
     // Documentation
-    insurance_notes: job.insurance_notes || '',
-    next_steps: job.next_steps || ''
+    insurance_notes: job.insurance_notes || ''
   });
 
   const statuses = [
@@ -192,7 +189,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           note_text: newNote,
-          created_by: 'Team Member'
+          created_by: currentUser?.name || 'Team Member'
         })
       });
 
@@ -205,38 +202,6 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       setError(err.message);
-    }
-  };
-
-  // Advance Next Steps: archive the current next step as a Project Note, then set the new one.
-  const handleAdvanceNextSteps = async () => {
-    if (!newNextSteps.trim()) { setError('Please enter the next step'); return; }
-    setSavingNextSteps(true);
-    setError('');
-    try {
-      const response = await fetch(`${apiUrl}/api/jobs/${job.id}/next-steps`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          next_steps: newNextSteps,
-          created_by: currentUser?.name || 'Team Member'
-        })
-      });
-      if (!response.ok) {
-        const d = await response.json().catch(() => ({}));
-        throw new Error(d.error || 'Failed to update next steps');
-      }
-      const data = await response.json();
-      setJobData(prev => ({ ...prev, next_steps: data.next_steps }));
-      setEditForm(prev => ({ ...prev, next_steps: data.next_steps }));
-      if (data.archivedNote) setProjectNotes(prev => [data.archivedNote, ...prev]);
-      setNewNextSteps('');
-      setMessage('Next steps updated');
-      setTimeout(() => setMessage(''), 3000);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSavingNextSteps(false);
     }
   };
 
@@ -267,6 +232,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const CATEGORY_LABELS = {
     'category:pto': 'Paid Time Off',
     'category:shop': 'Shop',
+    'category:bizdev': 'Business Development',
     'category:unpaid': 'Unpaid Time Off',
     'category:lunch': 'Lunch',
     'category:joblisted': 'Job Not Listed'
@@ -733,34 +699,6 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           )}
         </div>
       ) : null}
-
-      {/* Next Steps Section — rolling log: setting a new one archives the old to Project Notes */}
-      <div className="detail-section">
-        <h3>Next Steps</h3>
-        {jobData.next_steps ? (
-          <div className="notes-text next-steps-current">{jobData.next_steps}</div>
-        ) : (
-          <p className="next-steps-empty">No next steps set yet.</p>
-        )}
-        {!isEditing && (
-          <div className="form-group next-steps-add">
-            <label>Update next steps</label>
-            <textarea
-              value={newNextSteps}
-              onChange={(e) => setNewNextSteps(e.target.value)}
-              placeholder="Enter the new next step… (the current one moves into Project Notes)"
-              rows="4"
-            />
-            <button
-              className="add-note-btn"
-              onClick={handleAdvanceNextSteps}
-              disabled={!newNextSteps.trim() || savingNextSteps}
-            >
-              {savingNextSteps ? 'Updating…' : 'Update Next Steps'}
-            </button>
-          </div>
-        )}
-      </div>
 
       {/* Save Button (Editing Mode) */}
       {isEditing && (

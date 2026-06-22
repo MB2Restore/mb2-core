@@ -129,7 +129,7 @@ function JobList({ jobs, loading, onViewJob }) {
     { key: 'lead_source', label: 'Lead Source' },
     { key: 'status', label: 'Status' },
     { key: 'date_received', label: 'Date Received' },
-    { key: 'next_steps', label: 'Next Steps' }
+    { key: 'latest_note', label: 'Latest Note' }
   ];
 
   return (
@@ -221,7 +221,7 @@ function JobList({ jobs, loading, onViewJob }) {
                     </span>
                   </td>
                   <td className="td-date">{fmtDate(job.date_received)}</td>
-                  <td className="td-notes" title={job.next_steps || ''}>{truncate(job.next_steps, 40)}</td>
+                  <td className="td-notes" title={job.latest_note || ''}>{truncate(job.latest_note, 40)}</td>
                 </tr>
               ))}
             </tbody>
@@ -245,8 +245,8 @@ function JobList({ jobs, loading, onViewJob }) {
                 <p><strong>Customer:</strong> {job.customer_name}</p>
                 <p><strong>Type:</strong> {job.type}</p>
                 <p><strong>Lead Source:</strong> {job.lead_source || '—'}</p>
-                {job.next_steps && (
-                  <p className="job-next-steps"><strong>Next Steps:</strong> {job.next_steps}</p>
+                {job.latest_note && (
+                  <p className="job-next-steps"><strong>Latest Note:</strong> {job.latest_note}</p>
                 )}
               </div>
             </div>
