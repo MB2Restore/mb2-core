@@ -24,6 +24,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
 
   const [editForm, setEditForm] = useState({
     // Customer fields
+    nickname: job.nickname || '',
     customer_name: job.customer_name || '',
     customer_phone: job.customer_phone || '',
     customer_email: job.customer_email || '',
@@ -144,6 +145,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          nickname: editForm.nickname,
           type: editForm.type,
           lead_source: editForm.lead_source,
           docusketch_url: editForm.docusketch_url,
@@ -362,6 +364,18 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         <div className="detail-section">
           <h3>Job Information</h3>
           <div className="info-display">
+            {isEditing && (
+              <div className="form-group">
+                <label>Job Name</label>
+                <input
+                  type="text"
+                  name="nickname"
+                  value={editForm.nickname}
+                  onChange={handleEditChange}
+                  placeholder="Job name / nickname"
+                />
+              </div>
+            )}
             {isEditing ? (
               <div className="form-group">
                 <label>Address</label>
@@ -527,6 +541,44 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Project Notes Section — visible to everyone who can see the job */}
+      <div className="detail-section">
+        <h3>Project Notes</h3>
+        <div className="form-group">
+          <textarea
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder="Add a project note..."
+            rows="3"
+          />
+          <button
+            className="add-note-btn"
+            onClick={handleAddNote}
+            disabled={!newNote.trim()}
+          >
+            Add Note
+          </button>
+        </div>
+
+        {loadingNotes ? (
+          <p style={{ textAlign: 'center', color: '#666' }}>Loading notes...</p>
+        ) : projectNotes.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#999' }}>No notes yet</p>
+        ) : (
+          <div className="notes-list">
+            {projectNotes.map((note) => (
+              <div key={note.id} className="note-item">
+                <div className="note-header">
+                  <span className="note-date">{formatDateTime(note.created_date)}</span>
+                  <span className="note-author">{note.created_by}</span>
+                </div>
+                <p className="note-text">{note.note_text}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Dates Section */}
@@ -708,44 +760,6 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           </button>
         </div>
       )}
-
-      {/* Project Notes Section — visible to everyone who can see the job */}
-      <div className="detail-section">
-        <h3>Project Notes</h3>
-        <div className="form-group">
-          <textarea
-            value={newNote}
-            onChange={(e) => setNewNote(e.target.value)}
-            placeholder="Add a project note..."
-            rows="3"
-          />
-          <button
-            className="add-note-btn"
-            onClick={handleAddNote}
-            disabled={!newNote.trim()}
-          >
-            Add Note
-          </button>
-        </div>
-
-        {loadingNotes ? (
-          <p style={{ textAlign: 'center', color: '#666' }}>Loading notes...</p>
-        ) : projectNotes.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#999' }}>No notes yet</p>
-        ) : (
-          <div className="notes-list">
-            {projectNotes.map((note) => (
-              <div key={note.id} className="note-item">
-                <div className="note-header">
-                  <span className="note-date">{formatDateTime(note.created_date)}</span>
-                  <span className="note-author">{note.created_by}</span>
-                </div>
-                <p className="note-text">{note.note_text}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Time Tracking Summary */}
       {!isFieldView && timeEntries.length > 0 && (

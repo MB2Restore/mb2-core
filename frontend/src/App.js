@@ -56,6 +56,20 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Back-button handling: if the user is on a job detail and presses Back,
+  // return to the Jobs list rather than leaving the app. Always keep a history
+  // entry in place so the first Back press has somewhere to land.
+  useEffect(() => {
+    const onPop = () => {
+      setView(v => (v === 'detail' ? 'jobs' : v));
+      // Re-arm a history entry so the next Back press is also captured.
+      window.history.pushState({ view: 'app' }, '');
+    };
+    window.history.pushState({ view: 'app' }, '');
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const handleLogin = (newToken, user) => {
     setToken(newToken);
     setCurrentUser(user);
@@ -100,6 +114,9 @@ function App() {
   const handleViewJob = (job) => {
     setSelectedJob(job);
     setView('detail');
+    // Push a history entry so the device/browser Back button returns to the
+    // Jobs list (instead of exiting the home-screen web app).
+    window.history.pushState({ view: 'detail' }, '');
   };
 
   const handleBackToList = () => {

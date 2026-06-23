@@ -2,12 +2,28 @@ import React, { useState, useMemo } from 'react';
 import './JobList.css';
 
 function JobList({ jobs, loading, onViewJob }) {
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards'
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterType, setFilterType] = useState('all');
-  const [search, setSearch] = useState('');
-  const [sortKey, setSortKey] = useState('date_received');
-  const [sortDir, setSortDir] = useState('desc');
+  // Persist the Jobs view/filter/sort choices so they survive navigating away
+  // (into a job and back) and app restarts. Stored under one localStorage key.
+  const PREFS_KEY = 'mb2_jobs_prefs';
+  const loadPrefs = () => {
+    try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; }
+    catch (e) { return {}; }
+  };
+  const prefs = loadPrefs();
+
+  const [viewMode, setViewMode] = useState(prefs.viewMode || 'table'); // 'table' | 'cards'
+  const [filterStatus, setFilterStatus] = useState(prefs.filterStatus || 'all');
+  const [filterType, setFilterType] = useState(prefs.filterType || 'all');
+  const [search, setSearch] = useState(prefs.search || '');
+  const [sortKey, setSortKey] = useState(prefs.sortKey || 'date_received');
+  const [sortDir, setSortDir] = useState(prefs.sortDir || 'desc');
+
+  // Save prefs whenever any of them change
+  React.useEffect(() => {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({
+      viewMode, filterStatus, filterType, search, sortKey, sortDir
+    }));
+  }, [viewMode, filterStatus, filterType, search, sortKey, sortDir]);
 
   // Build filter options from the ACTUAL data so they always match what's there
   const statusOptions = useMemo(() => {
