@@ -187,7 +187,7 @@ function App() {
 
       <main className="app-main">
         {hasFullAccess && view === 'intake' && (
-          <IntakeForm onJobCreated={handleJobCreated} apiUrl={API_URL} />
+          <IntakeForm onJobCreated={handleJobCreated} apiUrl={API_URL} currentUser={currentUser} />
         )}
 
         {view === 'jobs' && (

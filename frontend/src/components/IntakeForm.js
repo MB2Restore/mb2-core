@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './IntakeForm.css';
 
-function IntakeForm({ onJobCreated, apiUrl }) {
+function IntakeForm({ onJobCreated, apiUrl, currentUser }) {
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
@@ -43,7 +43,7 @@ function IntakeForm({ onJobCreated, apiUrl }) {
 
     try {
       // Validate required fields
-      if (!formData.customer_name || !formData.address1 || !formData.city_state || !formData.customer_phone) {
+      if (!formData.customer_name || !formData.address1 || !formData.city_state) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -84,6 +84,21 @@ function IntakeForm({ onJobCreated, apiUrl }) {
 
       if (!jobRes.ok) throw new Error('Failed to create job');
       const newJob = await jobRes.json();
+
+      // If initial notes were entered, save them as the job's first Project Note
+      // (this is what populates the "Latest Note" shown on the Jobs list).
+      if (formData.notes && formData.notes.trim()) {
+        try {
+          await fetch(`${apiUrl}/api/jobs/${newJob.id}/notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              note_text: formData.notes.trim(),
+              created_by: currentUser?.name || 'Intake'
+            })
+          });
+        } catch (e) { /* non-blocking: job is already created */ }
+      }
 
       // Reset form
       setFormData({
@@ -135,7 +150,7 @@ function IntakeForm({ onJobCreated, apiUrl }) {
           {/* Phone */}
           <div className="form-group">
             <label htmlFor="customer_phone">
-              Contact Phone *
+              Contact Phone (Optional)
             </label>
             <input
               type="tel"
@@ -144,7 +159,6 @@ function IntakeForm({ onJobCreated, apiUrl }) {
               value={formData.customer_phone}
               onChange={handleChange}
               placeholder="e.g., (555) 123-4567"
-              required
             />
           </div>
 
