@@ -11,9 +11,9 @@ import Receipts from './components/Receipts';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function App() {
-  const [token, setToken] = useState(() => sessionStorage.getItem('mb2_token') || '');
+  const [token, setToken] = useState(() => localStorage.getItem('mb2_token') || '');
   const [currentUser, setCurrentUser] = useState(() => {
-    const stored = sessionStorage.getItem('mb2_user');
+    const stored = localStorage.getItem('mb2_user');
     return stored ? JSON.parse(stored) : null;
   });
   const [authChecked, setAuthChecked] = useState(false);
@@ -42,7 +42,7 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           setCurrentUser(data.user);
-          sessionStorage.setItem('mb2_user', JSON.stringify(data.user));
+          localStorage.setItem('mb2_user', JSON.stringify(data.user));
         } else {
           handleLogout();
         }
@@ -59,16 +59,16 @@ function App() {
   const handleLogin = (newToken, user) => {
     setToken(newToken);
     setCurrentUser(user);
-    sessionStorage.setItem('mb2_token', newToken);
-    sessionStorage.setItem('mb2_user', JSON.stringify(user));
+    localStorage.setItem('mb2_token', newToken);
+    localStorage.setItem('mb2_user', JSON.stringify(user));
     setView(user.role === 'field' ? 'tracking' : 'jobs');
   };
 
   const handleLogout = () => {
     setToken('');
     setCurrentUser(null);
-    sessionStorage.removeItem('mb2_token');
-    sessionStorage.removeItem('mb2_user');
+    localStorage.removeItem('mb2_token');
+    localStorage.removeItem('mb2_user');
     setView('jobs');
   };
 
