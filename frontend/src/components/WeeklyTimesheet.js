@@ -373,6 +373,16 @@ function WeeklyTimesheet({ apiUrl, targetUser, canManage = false, jobs = [], ref
                             <TimePicker label="Stop" value={editForm.timeStop} onChange={v => editChange('timeStop', v)} />
                           </div>
                         </div>
+                        <div className="ts-edit-field">
+                          <label>Description</label>
+                          <textarea
+                            className="ts-edit-notes"
+                            value={editForm.notes}
+                            onChange={e => editChange('notes', e.target.value)}
+                            placeholder="What was worked on?"
+                            rows="2"
+                          />
+                        </div>
                         <div className="ts-edit-actions">
                           <button className="ts-save-btn" onClick={() => saveEdit(e)} disabled={savingEdit}>{savingEdit ? 'Saving...' : 'Save'}</button>
                           <button className="ts-cancel-btn" onClick={cancelEdit} disabled={savingEdit}>Cancel</button>
@@ -410,6 +420,16 @@ function WeeklyTimesheet({ apiUrl, targetUser, canManage = false, jobs = [], ref
                       <label>Stop</label>
                       <TimePicker label="Stop" value={addForm.timeStop} onChange={v => addChange('timeStop', v)} />
                     </div>
+                  </div>
+                  <div className="ts-edit-field">
+                    <label>Description</label>
+                    <textarea
+                      className="ts-edit-notes"
+                      value={addForm.notes}
+                      onChange={e => addChange('notes', e.target.value)}
+                      placeholder="What was worked on?"
+                      rows="2"
+                    />
                   </div>
                   <div className="ts-edit-actions">
                     <button className="ts-save-btn" onClick={saveAdd} disabled={savingAdd}>{savingAdd ? 'Adding...' : 'Add Entry'}</button>

@@ -284,7 +284,6 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
                 <input
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   onChange={handlePhoto}
                   className="photo-input"
                 />

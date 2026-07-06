@@ -245,6 +245,17 @@
   background: #fff;
 }
 
+.ts-edit-notes {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+}
+
 /* Split hour : minute AM/PM picker (matches the Log Time form) */
 .ts-time-parts {
   display: flex;

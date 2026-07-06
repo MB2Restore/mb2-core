@@ -105,7 +105,9 @@ function App() {
   }, [currentUser]);
 
   const handleJobCreated = (newJob) => {
-    setJobs([newJob, ...jobs]);
+    // Re-fetch so the list shows the joined customer_name / latest_note that the
+    // create response doesn't include (those come from JOINs in the GET query).
+    fetchJobs();
     setMessage('Job created successfully!');
     setTimeout(() => setMessage(''), 3000);
     setView('jobs');
