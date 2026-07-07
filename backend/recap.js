@@ -245,7 +245,7 @@ function fieldRecapHtml(r) {
       <div style="opacity:.85;font-size:13px;margin-top:4px">${r.window.start} – ${r.window.end}</div>
     </div>
     <p style="font-size:15px;margin:16px 0">
-      Hi ${esc(r.user)}, here's what we have on record for last week. <strong>Please review and add any missing time or receipts before Monday.</strong>
+      Hi ${esc(r.user)}, here's the time we have on record for you last week. <strong>Please make sure all of your hours are entered before Monday at 8:00 AM</strong> so payroll is accurate.
     </p>
     <p style="font-size:15px;font-weight:600;margin:12px 0">
       Paid hours: ${r.paidHours} hrs${parseFloat(r.lunchHours) > 0 ? ` (excl. ${r.lunchHours} lunch)` : ''} &nbsp;|&nbsp;
@@ -268,8 +268,65 @@ function fieldRecapHtml(r) {
       <tbody>${recRows || '<tr><td colspan="4" style="padding:8px;color:#999">No receipts last week.</td></tr>'}</tbody>
     </table>
 
-    <p style="font-size:13px;color:#666;margin-top:20px">Log in to MB2 Core to add or fix anything before payroll runs Monday.</p>
+    <p style="font-size:13px;color:#666;margin-top:20px">Log in to MB2 Core to add or fix anything before <strong>Monday 8:00 AM</strong>, when payroll runs.</p>
   </body></html>`;
 }
 
-module.exports = { resolveWeek, buildOfficeRecap, officeRecapHtml, buildFieldRecap, fieldRecapHtml, parseLocalDate, fmtMoney, fmtMD, addDays, startOfWeekSun, jobAmount };
+// ===== Email #3: hours-by-employee weekly summary (for admins) =====
+// Given all time entries (any user) + the list of active users, totals each
+// person's PAID hours (lunch excluded) for the week. Returns rows + grand total.
+function buildHoursByEmployee(users, timeEntries, weekParam) {
+  const { start, end } = resolveWeek(weekParam);
+  const isLunch = (e) => e.job_id === 'category:lunch';
+
+  // Tally minutes per technician_id (fall back to technician_name)
+  const byId = {};
+  timeEntries.forEach(e => {
+    if (!inWindow(e.date, start, end)) return;
+    const key = e.technician_id || ('name:' + (e.technician_name || 'Unknown'));
+    if (!byId[key]) byId[key] = { totalMin: 0, lunchMin: 0, name: e.technician_name || '' };
+    const m = e.duration_minutes || 0;
+    byId[key].totalMin += m;
+    if (isLunch(e)) byId[key].lunchMin += m;
+  });
+
+  // Build rows for every active user (so people with 0 hours still appear)
+  const rows = users.map(u => {
+    const t = byId[u.id] || { totalMin: 0, lunchMin: 0 };
+    const paid = t.totalMin - t.lunchMin;
+    return { name: u.name, paidHours: (paid / 60).toFixed(2), _paid: paid };
+  }).sort((a, b) => b._paid - a._paid);
+
+  const grandMin = rows.reduce((s, r) => s + r._paid, 0);
+
+  return {
+    window: { start: fmtMD(start), end: fmtMD(end) },
+    rows: rows.map(({ name, paidHours }) => ({ name, paidHours })),
+    grandTotal: (grandMin / 60).toFixed(2)
+  };
+}
+
+function hoursByEmployeeHtml(r) {
+  const orange = '#F26522', dark = '#1a1a2e';
+  const rows = r.rows.map(x => `
+    <tr><td style="padding:8px;border-bottom:1px solid #eee">${esc(x.name)}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${x.paidHours}</td></tr>`).join('');
+  return `<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:16px">
+    <div style="background:${dark};color:#fff;padding:16px 20px;border-bottom:3px solid ${orange};border-radius:8px 8px 0 0">
+      <h2 style="margin:0;font-size:20px">Weekly Hours by Employee</h2>
+      <div style="opacity:.85;font-size:13px;margin-top:4px">${r.window.start} – ${r.window.end}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:16px">
+      <thead><tr style="background:#f4f4f6;text-align:left">
+        <th style="padding:8px">Employee</th><th style="padding:8px;text-align:right">Paid Hours</th>
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="2" style="padding:8px;color:#999">No hours logged.</td></tr>'}</tbody>
+      <tfoot><tr style="font-weight:700;background:#fafafa">
+        <td style="padding:8px">Total</td><td style="padding:8px;text-align:right">${r.grandTotal}</td>
+      </tr></tfoot>
+    </table>
+    <p style="font-size:12px;color:#888;margin-top:16px">Paid hours exclude lunch. From MB2 Core.</p>
+  </body></html>`;
+}
+
+module.exports = { resolveWeek, buildOfficeRecap, officeRecapHtml, buildFieldRecap, fieldRecapHtml, parseLocalDate, fmtMoney, fmtMD, addDays, startOfWeekSun, jobAmount, buildHoursByEmployee, hoursByEmployeeHtml };

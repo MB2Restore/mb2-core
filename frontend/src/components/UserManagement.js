@@ -47,6 +47,30 @@ function UserManagement({ apiUrl, token, currentUser }) {
     }
   };
   const [recapUserId, setRecapUserId] = useState('');
+  const [sendingEmail, setSendingEmail] = useState('');
+
+  // POST to a send endpoint to actually email recipients (test the real send).
+  const sendTestEmail = async (path, label) => {
+    if (!window.confirm(`Send the "${label}" email now to its real recipients?`)) return;
+    setSendingEmail(path);
+    setError('');
+    try {
+      const res = await fetch(`${apiUrl}${path}`, { method: 'POST', headers: authHeaders, body: '{}' });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Failed to send');
+      if (d.skipped) {
+        flash(`${label}: email not configured yet (nothing sent).`);
+      } else if (d.count !== undefined) {
+        flash(`${label}: sent to ${d.count} field staff.`);
+      } else {
+        flash(`${label}: sent to ${d.recipients ?? '?'} recipient(s).`);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingEmail('');
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -195,6 +219,26 @@ function UserManagement({ apiUrl, token, currentUser }) {
                 Field Recap (Sunday)
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Send Test Emails (admin) — fires the REAL send to recipients */}
+        <div className="recap-preview">
+          <h3>Send Test Emails</h3>
+          <p className="recap-hint">Sends the actual weekly emails to their real recipients right now (covers last week). Use to test before the automatic schedule runs.</p>
+          <div className="recap-actions">
+            <button className="recap-btn" disabled={!!sendingEmail}
+              onClick={() => sendTestEmail('/api/emails/field-reminders', 'Field hours reminder')}>
+              {sendingEmail === '/api/emails/field-reminders' ? 'Sending…' : 'Send Field Reminders'}
+            </button>
+            <button className="recap-btn" disabled={!!sendingEmail}
+              onClick={() => sendTestEmail('/api/emails/office-recap', 'Office recap')}>
+              {sendingEmail === '/api/emails/office-recap' ? 'Sending…' : 'Send Office Recap'}
+            </button>
+            <button className="recap-btn" disabled={!!sendingEmail}
+              onClick={() => sendTestEmail('/api/emails/hours-by-employee', 'Hours by employee')}>
+              {sendingEmail === '/api/emails/hours-by-employee' ? 'Sending…' : 'Send Hours by Employee'}
+            </button>
           </div>
         </div>
 

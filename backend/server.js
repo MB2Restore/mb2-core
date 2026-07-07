@@ -239,6 +239,12 @@ app.post('/api/jobs', h(async (req, res) => {
     [jobId, customer_id, nickname, address, type, status, lead_source, today]
   );
   res.json({ id: jobId, customer_id, nickname, address, type, status, lead_source, date_received: today });
+
+  // Notify admins of the new job (non-blocking — never affects the create response).
+  (async () => {
+    const cust = customer_id ? await get('SELECT name FROM customers WHERE id = $1', [customer_id]) : null;
+    sendNewJobAlert({ nickname, address, type, status, lead_source, date_received: today, customer_name: cust ? cust.name : '' });
+  })().catch(() => {});
 }));
 
 // Update job — dynamic column set, $N placeholders
@@ -701,7 +707,9 @@ app.put('/api/users/:id', requireAuth, requireAdmin, h(async (req, res) => {
 }));
 
 // ===== WEEKLY RECAP ENDPOINTS (office ops + field) =====
-const { buildOfficeRecap, officeRecapHtml, buildFieldRecap, fieldRecapHtml } = require('./recap');
+const { buildOfficeRecap, officeRecapHtml, buildFieldRecap, fieldRecapHtml,
+        buildHoursByEmployee, hoursByEmployeeHtml } = require('./recap');
+const { sendEmail } = require('./email');
 
 const fetchAllJobsForRecap = () =>
   all(`SELECT j.*, c.name AS customer_name FROM jobs j LEFT JOIN customers c ON j.customer_id = c.id`);
@@ -738,10 +746,139 @@ app.get('/api/recap/field/:userId', requireAuth, h(async (req, res) => {
   res.set('Content-Type', 'text/html').send(fieldRecapHtml(recap));
 }));
 
+// ===== WEEKLY EMAIL SENDERS (shared by manual buttons + cron scheduler) =====
+
+// Recipient helpers
+const getFieldUsers = () =>
+  all("SELECT id, name, email FROM users WHERE active = TRUE AND role = 'field' AND email IS NOT NULL");
+const getOfficeAndAdmins = () =>
+  all("SELECT id, name, email FROM users WHERE active = TRUE AND role IN ('office','admin') AND email IS NOT NULL");
+const getAdmins = () =>
+  all("SELECT id, name, email FROM users WHERE active = TRUE AND role = 'admin' AND email IS NOT NULL");
+const getActiveUsers = () =>
+  all("SELECT id, name FROM users WHERE active = TRUE");
+
+// Email #1: field staff Sunday hours reminder — one personalized email per field user.
+async function sendFieldReminders(weekParam) {
+  const users = await getFieldUsers();
+  const results = [];
+  for (const u of users) {
+    const times = await all(
+      `SELECT te.*, j.nickname AS job_name FROM time_entries te LEFT JOIN jobs j ON te.job_id = j.id WHERE te.technician_id = $1`, [u.id]);
+    const receipts = await all(
+      `SELECT r.*, j.nickname AS job_name FROM receipts r LEFT JOIN jobs j ON r.job_id = j.id WHERE r.technician_id = $1`, [u.id]);
+    const recap = buildFieldRecap(u.name, times || [], receipts || [], weekParam);
+    const r = await sendEmail({
+      to: u.email,
+      subject: 'MB2 Core — Please confirm your hours before Monday 8 AM',
+      html: fieldRecapHtml(recap)
+    });
+    results.push({ user: u.name, email: u.email, ...r });
+  }
+  return { count: results.length, results };
+}
+
+// Email #2: office/admin Monday job recap — one email to all office + admins.
+async function sendOfficeRecap(weekParam) {
+  const recipients = (await getOfficeAndAdmins()).map(u => u.email);
+  const jobs = await fetchAllJobsForRecap();
+  const recap = buildOfficeRecap(jobs, weekParam);
+  const r = await sendEmail({
+    to: recipients,
+    subject: 'MB2 Core — Weekly Job Recap',
+    html: officeRecapHtml(recap)
+  });
+  return { recipients: recipients.length, ...r };
+}
+
+// Email #3: hours-by-employee summary — to admins only.
+async function sendHoursByEmployee(weekParam) {
+  const recipients = (await getAdmins()).map(u => u.email);
+  const users = await getActiveUsers();
+  const times = await all('SELECT technician_id, technician_name, job_id, date, duration_minutes FROM time_entries');
+  const recap = buildHoursByEmployee(users, times || [], weekParam);
+  const r = await sendEmail({
+    to: recipients,
+    subject: 'MB2 Core — Weekly Hours by Employee',
+    html: hoursByEmployeeHtml(recap)
+  });
+  return { recipients: recipients.length, ...r };
+}
+
+// New-job alert: emails all admins when a job is created. Fire-and-forget.
+function newJobAlertHtml(job) {
+  const orange = '#F26522', dark = '#1a1a2e';
+  const row = (label, val) => val ? `<tr><td style="padding:6px 10px;color:#666;font-size:13px">${label}</td><td style="padding:6px 10px;font-size:14px"><strong>${String(val).replace(/[<>&]/g,'')}</strong></td></tr>` : '';
+  return `<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:560px;margin:0 auto;padding:16px">
+    <div style="background:${dark};color:#fff;padding:16px 20px;border-bottom:3px solid ${orange};border-radius:8px 8px 0 0">
+      <h2 style="margin:0;font-size:19px">New Job Added</h2>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:14px">
+      ${row('Job Name', job.nickname || job.address)}
+      ${row('Customer', job.customer_name)}
+      ${row('Address', job.address)}
+      ${row('Type', job.type)}
+      ${row('Status', job.status)}
+      ${row('Lead Source', job.lead_source)}
+      ${row('Date Received', job.date_received)}
+    </table>
+    <p style="font-size:13px;color:#666;margin-top:18px">Log in to MB2 Core to view the full job.</p>
+  </body></html>`;
+}
+
+async function sendNewJobAlert(job) {
+  try {
+    const recipients = (await getAdmins()).map(u => u.email);
+    if (recipients.length === 0) return;
+    await sendEmail({
+      to: recipients,
+      subject: `MB2 Core — New Job: ${job.nickname || job.address || 'Untitled'}`,
+      html: newJobAlertHtml(job)
+    });
+  } catch (e) {
+    console.error('[email] new-job alert failed (ignored):', e.message);
+  }
+}
+
+// Admin-only endpoints to send each email on demand (for testing before/besides the schedule).
+app.post('/api/emails/field-reminders', requireAuth, requireAdmin, h(async (req, res) => {
+  res.json(await sendFieldReminders(req.body?.week));
+}));
+app.post('/api/emails/office-recap', requireAuth, requireAdmin, h(async (req, res) => {
+  res.json(await sendOfficeRecap(req.body?.week));
+}));
+app.post('/api/emails/hours-by-employee', requireAuth, requireAdmin, h(async (req, res) => {
+  res.json(await sendHoursByEmployee(req.body?.week));
+}));
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'Backend is running' });
 });
+
+// Weekly email schedule (node-cron). Times are America/New_York (ET).
+//   #1 Field reminders  -> Sunday 7:00 AM ET
+//   #2 Office recap      -> Monday 8:00 AM ET
+//   #3 Hours by employee -> Monday 8:00 AM ET
+function scheduleWeeklyEmails() {
+  let cron;
+  try { cron = require('node-cron'); }
+  catch (e) { console.warn('[cron] node-cron not installed — weekly emails will NOT auto-send.'); return; }
+
+  const TZ = 'America/New_York';
+  const safe = (label, fn) => async () => {
+    try { const r = await fn(); console.log(`[cron] ${label} sent:`, JSON.stringify(r)); }
+    catch (e) { console.error(`[cron] ${label} failed:`, e.message); }
+  };
+
+  // Sunday 7:00 AM ET
+  cron.schedule('0 7 * * 0', safe('field-reminders', () => sendFieldReminders()), { timezone: TZ });
+  // Monday 8:00 AM ET
+  cron.schedule('0 8 * * 1', safe('office-recap', () => sendOfficeRecap()), { timezone: TZ });
+  cron.schedule('0 8 * * 1', safe('hours-by-employee', () => sendHoursByEmployee()), { timezone: TZ });
+
+  console.log('[cron] Weekly email schedule armed (Sun 7am + Mon 8am ET).');
+}
 
 // Start server after the schema is ready
 initializeDatabase()
@@ -749,6 +886,7 @@ initializeDatabase()
     app.listen(PORT, () => {
       console.log(`MB2 Core backend running on port ${PORT}`);
     });
+    scheduleWeeklyEmails();
   })
   .catch((err) => {
     console.error('Failed to initialize database:', err);
