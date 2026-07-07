@@ -721,7 +721,7 @@ app.get('/api/recap/office', requireAuth, h(async (req, res) => {
   const jobs = await fetchAllJobsForRecap();
   const recap = buildOfficeRecap(jobs, req.query.week);
   if (req.query.format === 'json') return res.json(recap);
-  res.set('Content-Type', 'text/html').send(officeRecapHtml(recap));
+  res.set('Content-Type', 'text/html; charset=utf-8').send(officeRecapHtml(recap));
 }));
 
 app.get('/api/recap/field/:userId', requireAuth, h(async (req, res) => {
@@ -743,7 +743,7 @@ app.get('/api/recap/field/:userId', requireAuth, h(async (req, res) => {
   );
   const recap = buildFieldRecap(user.name, times || [], receipts || [], req.query.week);
   if (req.query.format === 'json') return res.json(recap);
-  res.set('Content-Type', 'text/html').send(fieldRecapHtml(recap));
+  res.set('Content-Type', 'text/html; charset=utf-8').send(fieldRecapHtml(recap));
 }));
 
 // ===== WEEKLY EMAIL SENDERS (shared by manual buttons + cron scheduler) =====
@@ -809,7 +809,7 @@ async function sendHoursByEmployee(weekParam) {
 function newJobAlertHtml(job) {
   const orange = '#F26522', dark = '#1a1a2e';
   const row = (label, val) => val ? `<tr><td style="padding:6px 10px;color:#666;font-size:13px">${label}</td><td style="padding:6px 10px;font-size:14px"><strong>${String(val).replace(/[<>&]/g,'')}</strong></td></tr>` : '';
-  return `<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:560px;margin:0 auto;padding:16px">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:560px;margin:0 auto;padding:16px">
     <div style="background:${dark};color:#fff;padding:16px 20px;border-bottom:3px solid ${orange};border-radius:8px 8px 0 0">
       <h2 style="margin:0;font-size:19px">New Job Added</h2>
     </div>

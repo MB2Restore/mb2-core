@@ -136,7 +136,7 @@ function officeRecapHtml(r) {
     </tr>`).join('');
   const insightsLi = r.insights.map(i => `<li style="margin:4px 0">${esc(i)}</li>`).join('');
 
-  return `<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:720px;margin:0 auto;padding:16px">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:720px;margin:0 auto;padding:16px">
     <div style="background:${dark};color:#fff;padding:16px 20px;border-bottom:3px solid ${orange};border-radius:8px 8px 0 0">
       <h2 style="margin:0;font-size:20px">MB2 Restore — Weekly Recap</h2>
       <div style="opacity:.85;font-size:13px;margin-top:4px">${r.window.start} – ${r.window.end}</div>
@@ -239,7 +239,7 @@ function fieldRecapHtml(r) {
   const recRows = r.receipts.map(c => `
     <tr><td>${c.date}</td><td>${esc(c.vendor)}</td><td>${esc(c.job)}</td><td style="text-align:right">${fmtMoney(c.amount)}</td></tr>`).join('');
 
-  return `<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:16px">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:640px;margin:0 auto;padding:16px">
     <div style="background:${dark};color:#fff;padding:16px 20px;border-bottom:3px solid ${orange};border-radius:8px 8px 0 0">
       <h2 style="margin:0;font-size:20px">Your Weekly Recap — ${esc(r.user)}</h2>
       <div style="opacity:.85;font-size:13px;margin-top:4px">${r.window.start} – ${r.window.end}</div>
@@ -311,7 +311,7 @@ function hoursByEmployeeHtml(r) {
   const rows = r.rows.map(x => `
     <tr><td style="padding:8px;border-bottom:1px solid #eee">${esc(x.name)}</td>
         <td style="padding:8px;border-bottom:1px solid #eee;text-align:right">${x.paidHours}</td></tr>`).join('');
-  return `<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:16px">
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Arial,Helvetica,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:16px">
     <div style="background:${dark};color:#fff;padding:16px 20px;border-bottom:3px solid ${orange};border-radius:8px 8px 0 0">
       <h2 style="margin:0;font-size:20px">Weekly Hours by Employee</h2>
       <div style="opacity:.85;font-size:13px;margin-top:4px">${r.window.start} – ${r.window.end}</div>
