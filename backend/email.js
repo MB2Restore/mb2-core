@@ -2,7 +2,7 @@
 //
 // Reads config from env:
 //   RESEND_API_KEY  — your Resend API key (required to actually send)
-//   FROM_EMAIL      — verified sender, e.g. "MB2 Core <noreply@mb2cares.com>"
+//   FROM_EMAIL      — verified sender, e.g. "MB2 Core <notifications@mb2cares.com>"
 //   EMAIL_ENABLED   — set to "false" to hard-disable sending (dry mode)
 //
 // If RESEND_API_KEY is missing, send() becomes a no-op that logs instead of

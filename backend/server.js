@@ -145,6 +145,19 @@ const initializeDatabase = async () => {
     )
   `);
 
+  await run(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id TEXT PRIMARY KEY,
+      job_id TEXT NOT NULL,
+      description TEXT,
+      filename TEXT,
+      file_url TEXT NOT NULL,
+      file_type TEXT,
+      uploaded_by TEXT,
+      created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Seed default admin if no users exist
   const row = await get('SELECT COUNT(*)::int AS count FROM users');
   if (row && row.count === 0) {
@@ -364,7 +377,7 @@ app.post('/api/time-entries/:id/clock-out', h(async (req, res) => {
 // Photo storage is handled by ./storage — Cloudflare R2 in production (when the
 // R2_* env vars are set) or local disk for development. savePhoto/deletePhoto are async.
 const express_static = express.static;
-const { savePhoto, deletePhoto, R2_ENABLED, uploadsDir } = require('./storage');
+const { savePhoto, deletePhoto, saveDocument, R2_ENABLED, uploadsDir } = require('./storage');
 
 // When using local-disk storage, serve the uploads folder. (No-op route under R2,
 // but harmless — R2 URLs are absolute and never hit this path.)
@@ -551,6 +564,55 @@ const requireAdmin = (req, res, next) => {
   }
   next();
 };
+
+// Require office or admin (for job document management)
+const requireOfficeOrAdmin = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'office')) {
+    return res.status(403).json({ error: 'Office or Admin access required' });
+  }
+  next();
+};
+
+// ===== JOB DOCUMENTS ENDPOINTS (estimates, approvals, authorizations, etc.) =====
+
+// List documents for a job (any logged-in user who can reach the job)
+app.get('/api/jobs/:jobId/documents', requireAuth, h(async (req, res) => {
+  const rows = await all(
+    `SELECT id, job_id, description, filename, file_url, file_type, uploaded_by, created_date
+     FROM documents WHERE job_id = $1 ORDER BY created_date DESC`,
+    [req.params.jobId]
+  );
+  res.json(rows);
+}));
+
+// Upload a document (office/admin). Body: { file (base64 data URL), filename, description }
+app.post('/api/jobs/:jobId/documents', requireAuth, requireOfficeOrAdmin, h(async (req, res) => {
+  const { file, filename, description } = req.body;
+  if (!file) return res.status(400).json({ error: 'A file is required' });
+
+  const saved = await saveDocument(file, filename);
+  if (saved.error) return res.status(400).json({ error: saved.error });
+
+  const id = uuidv4();
+  const now = new Date().toISOString();
+  await run(
+    `INSERT INTO documents (id, job_id, description, filename, file_url, file_type, uploaded_by, created_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [id, req.params.jobId, (description || '').trim() || null, filename || null,
+     saved.url, saved.ext || null, req.user.name || 'Unknown', now]
+  );
+  res.json({ id, job_id: req.params.jobId, description: (description || '').trim(),
+    filename, file_url: saved.url, file_type: saved.ext, uploaded_by: req.user.name, created_date: now });
+}));
+
+// Delete a document (office/admin) — removes the row and the stored file
+app.delete('/api/documents/:id', requireAuth, requireOfficeOrAdmin, h(async (req, res) => {
+  const row = await get('SELECT file_url FROM documents WHERE id = $1', [req.params.id]);
+  const { rowCount } = await run('DELETE FROM documents WHERE id = $1', [req.params.id]);
+  if (rowCount === 0) return res.status(404).json({ error: 'Document not found' });
+  if (row && row.file_url) { try { await deletePhoto(row.file_url); } catch (e) { /* ignore */ } }
+  res.json({ success: true });
+}));
 
 // Delete a job and its child records (time entries, receipts, project notes).
 // Office or Admin only. Photos for the job's receipts are removed from storage too.

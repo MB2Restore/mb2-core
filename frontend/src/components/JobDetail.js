@@ -4,6 +4,7 @@ import './JobDetail.css';
 function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   // Field staff get a limited, view-only job view (no financials/time/receipts/notes, no editing)
   const isFieldView = currentUser?.role === 'field';
+  const canManageDocs = currentUser?.role === 'admin' || currentUser?.role === 'office';
   // Office/Admin can delete jobs (e.g. duplicates or test records)
   const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'office';
   const [deleting, setDeleting] = useState(false);
@@ -11,6 +12,10 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [projectNotes, setProjectNotes] = useState([]);
   const [timeEntries, setTimeEntries] = useState([]);
   const [receipts, setReceipts] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [docDescription, setDocDescription] = useState('');
+  const [docFile, setDocFile] = useState(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newNote, setNewNote] = useState('');
   const [message, setMessage] = useState('');
@@ -66,6 +71,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     fetchProjectNotes();
     fetchTimeEntries();
     fetchReceipts();
+    fetchDocuments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job.id]);
 
@@ -107,6 +113,70 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
       console.error('Error fetching receipts:', err);
     }
   };
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/jobs/${job.id}/documents`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) setDocuments(await response.json());
+    } catch (err) {
+      console.error('Error fetching documents:', err);
+    }
+  };
+
+  // Read the chosen file to a base64 data URL for upload.
+  const handleDocFile = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) { setDocFile(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => setDocFile({ name: f.name, dataUrl: reader.result });
+    reader.readAsDataURL(f);
+  };
+
+  const handleUploadDocument = async () => {
+    if (!docFile) { setError('Please choose a file'); return; }
+    setUploadingDoc(true);
+    setError('');
+    try {
+      const res = await fetch(`${apiUrl}/api/jobs/${job.id}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ file: docFile.dataUrl, filename: docFile.name, description: docDescription })
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Failed to upload document');
+      setDocuments(prev => [d, ...prev]);
+      setDocDescription('');
+      setDocFile(null);
+      // reset the file input
+      const input = document.getElementById('jd-doc-file');
+      if (input) input.value = '';
+      setMessage('Document uploaded');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handleDeleteDocument = async (doc) => {
+    if (!window.confirm(`Delete "${doc.description || doc.filename || 'this document'}"? This cannot be undone.`)) return;
+    setError('');
+    try {
+      const res = await fetch(`${apiUrl}/api/documents/${doc.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Failed to delete'); }
+      setDocuments(prev => prev.filter(x => x.id !== doc.id));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const docHref = (u) => (!u ? '#' : /^https?:\/\//i.test(u) ? u : `${apiUrl}${u}`);
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -837,6 +907,67 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Documents Section — estimates, approvals, authorizations, etc. (office/admin) */}
+      {canManageDocs && (
+      <div className="detail-section">
+        <h3>Documents</h3>
+
+        <div className="jd-doc-upload">
+          <div className="form-group">
+            <label>Description</label>
+            <input
+              type="text"
+              value={docDescription}
+              onChange={(e) => setDocDescription(e.target.value)}
+              placeholder="e.g. Signed estimate, Client authorization"
+            />
+          </div>
+          <div className="form-group">
+            <label>File (PDF, image, or Word — max 10 MB)</label>
+            <input
+              id="jd-doc-file"
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.heic,.webp,.doc,.docx,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleDocFile}
+            />
+          </div>
+          <button
+            className="add-note-btn"
+            onClick={handleUploadDocument}
+            disabled={!docFile || uploadingDoc}
+          >
+            {uploadingDoc ? 'Uploading…' : 'Upload Document'}
+          </button>
+        </div>
+
+        {documents.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#999', marginTop: '16px' }}>No documents yet</p>
+        ) : (
+          <table className="jd-docs-table">
+            <thead>
+              <tr><th>Date</th><th>Description</th><th>Document</th><th></th></tr>
+            </thead>
+            <tbody>
+              {documents.map((doc) => (
+                <tr key={doc.id}>
+                  <td className="jd-doc-date">{formatDate(doc.created_date)}</td>
+                  <td className="jd-doc-desc">{doc.description || doc.filename || '—'}</td>
+                  <td>
+                    <a href={docHref(doc.file_url)} target="_blank" rel="noopener noreferrer" className="jd-doc-link">
+                      View{doc.file_type ? ` (${doc.file_type.toUpperCase()})` : ''}
+                    </a>
+                  </td>
+                  <td className="jd-doc-actions">
+                    <button className="jd-doc-del" onClick={() => handleDeleteDocument(doc)} aria-label="Delete document">Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
       )}
     </div>
   );
