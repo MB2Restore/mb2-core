@@ -890,7 +890,7 @@ function newJobAlertHtml(job) {
 
 async function sendNewJobAlert(job) {
   try {
-    const recipients = (await getAdmins()).map(u => u.email);
+    const recipients = (await getOfficeAndAdmins()).map(u => u.email);
     if (recipients.length === 0) return;
     await sendEmail({
       to: recipients,
@@ -958,6 +958,5 @@ initializeDatabase()
 // Graceful shutdown
 process.on('SIGINT', async () => {
   console.log('Closing database pool...');
-  try { await pool.end(); } catch (e) { /* ignore */ }
   process.exit(0);
 });
