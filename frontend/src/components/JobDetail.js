@@ -131,9 +131,18 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   };
 
   // Read the chosen file to a base64 data URL for upload.
+  const MAX_DOC_MB = 10;
   const handleDocFile = (e) => {
     const f = e.target.files && e.target.files[0];
     if (!f) { setDocFile(null); return; }
+    // Reject oversized files up front with a clear message (instead of a silent fail on upload).
+    if (f.size > MAX_DOC_MB * 1024 * 1024) {
+      setError(`"${f.name}" is ${(f.size / (1024 * 1024)).toFixed(1)} MB — the limit is ${MAX_DOC_MB} MB. Please use a smaller file.`);
+      setDocFile(null);
+      e.target.value = '';
+      return;
+    }
+    setError('');
     const reader = new FileReader();
     reader.onload = () => setDocFile({ name: f.name, dataUrl: reader.result });
     reader.readAsDataURL(f);
