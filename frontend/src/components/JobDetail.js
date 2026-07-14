@@ -15,6 +15,10 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [documents, setDocuments] = useState([]);
   const [docDescription, setDocDescription] = useState('');
   const [docAmount, setDocAmount] = useState('');
+  // Collapsible section state — show just the latest item until expanded
+  const [notesExpanded, setNotesExpanded] = useState(false);
+  const [timeExpanded, setTimeExpanded] = useState(false);
+  const [expensesExpanded, setExpensesExpanded] = useState(false);
   const [docFile, setDocFile] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -643,7 +647,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           <p style={{ textAlign: 'center', color: '#999' }}>No notes yet</p>
         ) : (
           <div className="notes-list">
-            {projectNotes.map((note) => (
+            {(notesExpanded ? projectNotes : projectNotes.slice(0, 1)).map((note) => (
               <div key={note.id} className="note-item">
                 <div className="note-header">
                   <span className="note-date">{formatDateTime(note.created_date)}</span>
@@ -652,6 +656,11 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                 <p className="note-text">{note.note_text}</p>
               </div>
             ))}
+            {projectNotes.length > 1 && (
+              <button className="jd-toggle-btn" onClick={() => setNotesExpanded(v => !v)}>
+                {notesExpanded ? 'Show less' : `Show all ${projectNotes.length} notes`}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -853,7 +862,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
             )}
           </div>
           <div className="entries-table">
-            {timeEntries.slice(0, 10).map((entry) => (
+            {(timeExpanded ? timeEntries : timeEntries.slice(0, 1)).map((entry) => (
               <div key={entry.id} className="entry-row">
                 <div className="entry-cell">
                   <small>Date</small>
@@ -869,6 +878,11 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                 </div>
               </div>
             ))}
+            {timeEntries.length > 1 && (
+              <button className="jd-toggle-btn" onClick={() => setTimeExpanded(v => !v)}>
+                {timeExpanded ? 'Show less' : `Show all ${timeEntries.length} entries`}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -890,7 +904,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
             )}
           </div>
           <div className="receipts-table">
-            {receipts.map((receipt) => (
+            {(expensesExpanded ? receipts : receipts.slice(0, 1)).map((receipt) => (
               <div key={receipt.id} className="jd-receipt-row">
                 {receipt.photo_url ? (
                   <a href={/^https?:\/\//i.test(receipt.photo_url) ? receipt.photo_url : `${apiUrl}${receipt.photo_url}`} target="_blank" rel="noopener noreferrer">
@@ -910,6 +924,11 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                 </div>
               </div>
             ))}
+            {receipts.length > 1 && (
+              <button className="jd-toggle-btn" onClick={() => setExpensesExpanded(v => !v)}>
+                {expensesExpanded ? 'Show less' : `Show all ${receipts.length} receipts`}
+              </button>
+            )}
           </div>
         </div>
       )}
