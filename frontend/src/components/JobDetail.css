@@ -613,3 +613,33 @@
   cursor: pointer;
 }
 .jd-doc-del:hover { background: #fbd5d5; }
+
+/* Document amounts + job cost totals */
+.jd-doc-amount { text-align: right; white-space: nowrap; color: #1a1a2e; }
+.jd-docs-table th:nth-child(3) { text-align: right; }
+.jd-doc-subtotal td { border-top: 2px solid #eee; padding-top: 10px; color: #1a1a2e; }
+
+.jd-total-costs {
+  margin-top: 18px;
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 14px 16px;
+  max-width: 320px;
+  margin-left: auto;
+}
+.jd-total-costs-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #555;
+  padding: 4px 0;
+}
+.jd-total-costs-grand {
+  border-top: 2px solid #ddd;
+  margin-top: 6px;
+  padding-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+}

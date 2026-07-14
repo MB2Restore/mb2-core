@@ -14,6 +14,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [receipts, setReceipts] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [docDescription, setDocDescription] = useState('');
+  const [docAmount, setDocAmount] = useState('');
   const [docFile, setDocFile] = useState(null);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -142,12 +143,13 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
       const res = await fetch(`${apiUrl}/api/jobs/${job.id}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ file: docFile.dataUrl, filename: docFile.name, description: docDescription })
+        body: JSON.stringify({ file: docFile.dataUrl, filename: docFile.name, description: docDescription, amount: docAmount })
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || 'Failed to upload document');
       setDocuments(prev => [d, ...prev]);
       setDocDescription('');
+      setDocAmount('');
       setDocFile(null);
       // reset the file input
       const input = document.getElementById('jd-doc-file');
@@ -341,6 +343,9 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const totalTimeMinutes = timeEntries.reduce((sum, entry) => sum + (entry.duration_minutes || 0), 0);
   const totalHours = (totalTimeMinutes / 60).toFixed(2);
   const totalExpenses = receipts.reduce((sum, receipt) => sum + (parseFloat(receipt.amount) || 0), 0);
+  // Document amounts (subcontractor/vendor bills). Postgres returns NUMERIC as string, so parseFloat.
+  const documentsTotal = documents.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
+  const totalJobCosts = totalExpenses + documentsTotal;
 
   const exportReceipts = () => {
     const rows = [['Date', 'Person', 'Vendor', 'Amount', 'Description']];
@@ -925,6 +930,17 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
             />
           </div>
           <div className="form-group">
+            <label>Amount (optional — e.g. subcontractor quote/bill)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={docAmount}
+              onChange={(e) => setDocAmount(e.target.value)}
+              placeholder="e.g. 2450.00"
+            />
+          </div>
+          <div className="form-group">
             <label>File (PDF, image, or Word — max 10 MB)</label>
             <input
               id="jd-doc-file"
@@ -947,13 +963,14 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         ) : (
           <table className="jd-docs-table">
             <thead>
-              <tr><th>Date</th><th>Description</th><th>Document</th><th></th></tr>
+              <tr><th>Date</th><th>Description</th><th style={{ textAlign: 'right' }}>Amount</th><th>Document</th><th></th></tr>
             </thead>
             <tbody>
               {documents.map((doc) => (
                 <tr key={doc.id}>
                   <td className="jd-doc-date">{formatDate(doc.created_date)}</td>
                   <td className="jd-doc-desc">{doc.description || doc.filename || '—'}</td>
+                  <td className="jd-doc-amount">{doc.amount != null && doc.amount !== '' ? formatCurrency(doc.amount) : '—'}</td>
                   <td>
                     <a href={docHref(doc.file_url)} target="_blank" rel="noopener noreferrer" className="jd-doc-link">
                       View{doc.file_type ? ` (${doc.file_type.toUpperCase()})` : ''}
@@ -965,7 +982,24 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                 </tr>
               ))}
             </tbody>
+            {documentsTotal > 0 && (
+              <tfoot>
+                <tr className="jd-doc-subtotal">
+                  <td colSpan="2" style={{ fontWeight: 700 }}>Documents subtotal</td>
+                  <td className="jd-doc-amount" style={{ fontWeight: 700 }}>{formatCurrency(documentsTotal)}</td>
+                  <td colSpan="2"></td>
+                </tr>
+              </tfoot>
+            )}
           </table>
+        )}
+
+        {totalJobCosts > 0 && (
+          <div className="jd-total-costs">
+            <div className="jd-total-costs-row"><span>Receipts</span><span>{formatCurrency(totalExpenses)}</span></div>
+            <div className="jd-total-costs-row"><span>Documents</span><span>{formatCurrency(documentsTotal)}</span></div>
+            <div className="jd-total-costs-row jd-total-costs-grand"><span>Total Job Costs</span><span>{formatCurrency(totalJobCosts)}</span></div>
+          </div>
         )}
       </div>
       )}

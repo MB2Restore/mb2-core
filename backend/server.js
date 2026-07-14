@@ -153,10 +153,14 @@ const initializeDatabase = async () => {
       filename TEXT,
       file_url TEXT NOT NULL,
       file_type TEXT,
+      amount NUMERIC(12, 2),
       uploaded_by TEXT,
       created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Migration: add amount to documents if the table pre-dates this column
+  await run(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS amount NUMERIC(12, 2)`);
 
   // Seed default admin if no users exist
   const row = await get('SELECT COUNT(*)::int AS count FROM users');
@@ -578,7 +582,7 @@ const requireOfficeOrAdmin = (req, res, next) => {
 // List documents for a job (any logged-in user who can reach the job)
 app.get('/api/jobs/:jobId/documents', requireAuth, h(async (req, res) => {
   const rows = await all(
-    `SELECT id, job_id, description, filename, file_url, file_type, uploaded_by, created_date
+    `SELECT id, job_id, description, filename, file_url, file_type, amount, uploaded_by, created_date
      FROM documents WHERE job_id = $1 ORDER BY created_date DESC`,
     [req.params.jobId]
   );
@@ -587,7 +591,7 @@ app.get('/api/jobs/:jobId/documents', requireAuth, h(async (req, res) => {
 
 // Upload a document (office/admin). Body: { file (base64 data URL), filename, description }
 app.post('/api/jobs/:jobId/documents', requireAuth, requireOfficeOrAdmin, h(async (req, res) => {
-  const { file, filename, description } = req.body;
+  const { file, filename, description, amount } = req.body;
   if (!file) return res.status(400).json({ error: 'A file is required' });
 
   const saved = await saveDocument(file, filename);
@@ -595,14 +599,16 @@ app.post('/api/jobs/:jobId/documents', requireAuth, requireOfficeOrAdmin, h(asyn
 
   const id = uuidv4();
   const now = new Date().toISOString();
+  const amt = amount === '' || amount === undefined || amount === null ? null : parseFloat(amount);
   await run(
-    `INSERT INTO documents (id, job_id, description, filename, file_url, file_type, uploaded_by, created_date)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    `INSERT INTO documents (id, job_id, description, filename, file_url, file_type, amount, uploaded_by, created_date)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [id, req.params.jobId, (description || '').trim() || null, filename || null,
-     saved.url, saved.ext || null, req.user.name || 'Unknown', now]
+     saved.url, saved.ext || null, (amt != null && !isNaN(amt)) ? amt : null, req.user.name || 'Unknown', now]
   );
   res.json({ id, job_id: req.params.jobId, description: (description || '').trim(),
-    filename, file_url: saved.url, file_type: saved.ext, uploaded_by: req.user.name, created_date: now });
+    filename, file_url: saved.url, file_type: saved.ext,
+    amount: (amt != null && !isNaN(amt)) ? amt : null, uploaded_by: req.user.name, created_date: now });
 }));
 
 // Delete a document (office/admin) — removes the row and the stored file
