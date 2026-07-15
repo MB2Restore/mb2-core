@@ -172,6 +172,12 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
       photoPreview: photoSrc(r.photo_url)
     });
     setShowForm(true); setError('');
+    // The edit form renders at the top of the page; bring it into view so it's
+    // obvious the Edit button worked (otherwise it looks like nothing happened).
+    setTimeout(() => {
+      const el = document.getElementById('receipt-form-area');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
   const cancel = () => { setShowForm(false); setEditingId(null); setForm(emptyForm); };
 
@@ -265,7 +271,7 @@ function Receipts({ jobs = [], apiUrl, currentUser, token }) {
         {error && <div className="error-message">{error}</div>}
         {message && <div className="success-message">{message}</div>}
 
-        <div className="receipt-form-area">
+        <div className="receipt-form-area" id="receipt-form-area">
           {!showForm ? (
             <button onClick={openNew} className="add-receipt-btn">+ Add Receipt</button>
           ) : (
