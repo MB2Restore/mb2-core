@@ -17,23 +17,24 @@ At a high level, MB2 Core handles:
 - **Jobs** — every restoration project, its status, customer, dates, financials, notes, and documents
 - **Time tracking** — hours logged by employee, by job, on a weekly timesheet
 - **Receipts** — job-related expenses with photos, captured from the field
-- **Documents** — estimates, approvals, authorizations, and other files attached to each job
+- **Documents** — estimates, approvals, authorizations, vendor invoices, and other files attached to each job (each can carry an optional dollar amount)
+- **Job costs** — receipts and document amounts combine into a real, running cost per job
 - **Communication** — automated weekly emails and instant alerts that keep everyone informed
 
 ---
 
 ## User Types (Roles)
 
-Every person who uses MB2 Core has one of three roles. The role controls what they can see and do. This keeps the field experience simple and protects sensitive information like financials.
+Every person who uses MB2 Core has one of three roles. The role controls what they can see and do. This keeps the field experience simple and protects sensitive information like financials. Users will never be deleted to prevent data loss (time tracking and receipts), instead just deactivated if a user leaves the company.
 
 ### Admin
-Full access to everything, **plus** the ability to manage users (add people, set roles, deactivate departed staff) and send/preview the automated emails. Admins are typically ownership and system managers.
+Full access to everything, plus the ability to manage users (add people, set roles, deactivate departed staff) and send/preview the automated emails. Admins are typically ownership and system managers.
 
 ### Office
 Full access to the day-to-day application — jobs, time, receipts, and documents — but cannot manage user accounts. This is the operations and administrative team who run jobs and keep records current.
 
 ### Field Staff
-A streamlined, mobile-first experience focused on what a crew member needs on site: **logging their time** and **capturing receipts**. Field staff can view the jobs they're working, but only the essentials — job info, status, customer, key dates, and next steps. They do **not** see financials, payroll, or other employees' information.
+A streamlined, mobile-first experience focused on what a crew member needs on site: logging their time and capturing receipts. Field staff can view the jobs they're working, but only the essentials — job info, status, customer, key dates, and next steps. They do not see financials, payroll, or other employees' information.
 
 | Capability | Admin | Office | Field |
 |---|---|---|---|
@@ -60,8 +61,8 @@ Everything in MB2 Core revolves around the **job** — a single restoration proj
 - **Financials** — mitigation, repair, and other amounts that roll up to a project total
 - **Project Notes** — a running log of updates, with the most recent note surfaced as the job's "latest note"
 - **Time entries** — hours logged against the job
-- **Receipts** — expenses captured for the job
-- **Documents** — estimates, approvals, authorizations, and other attached files
+- **Receipts** — expenses captured for the job (typically credit-card purchases)
+- **Documents** — estimates, approvals, authorizations, vendor invoices, and other attached files; each can carry an optional dollar amount that counts toward the job's cost
 
 ---
 
@@ -98,30 +99,34 @@ Emergency jobs entered after hours can go straight to **In Process** at intake, 
 ### 1. Intake — Adding a New Job
 When a call comes in, office or admin staff use the **Quick Job Intake Form** — designed to be completed in under two minutes, even for an after-hours emergency. They enter the customer, address, work type, lead source, and any initial notes. Phone number is optional so nothing blocks a fast entry.
 
-On submit, MB2 Core creates the job, sets its starting status, and — if initial notes were added — records them as the job's first Project Note. **All office and admin staff immediately receive a "New Job Added" email**, so the team and ownership always know the moment a job enters the pipeline.
+On submit, MB2 Core creates the job, sets its starting status, and — if initial notes were added — records them as the job's first Project Note. **All Admins and Office users immediately receive a "New Job Added" email** (including those initial notes), so staff always know the moment a job enters the pipeline and have the context to act.
 
 ### 2. Working the Job
-From the **Jobs** list, staff can search, filter (by status or type), and sort to find any job. Opening a job shows everything about it on one page. As the job progresses, office/admin update its status, add Project Notes to log developments, fill in dates and financials, and attach documents.
+From the **Jobs** list, staff can search, filter (by status or type), and sort to find any job. Opening a job shows everything about it on one page. As the job progresses, Admin / Office users update its status, add Project Notes to log developments (also allowed by Field Staff), fill in dates and financials, and attach documents. Longer sections like Notes, Time, and Expenses collapse to the latest entry and expand on demand, so a busy job stays easy to scan.
 
 The **Jobs** list doubles as a live pipeline view — the whole book of business at a glance, with each job's status and latest note visible.
 
 ### 3. Time Tracking
-Field staff (and office/admin for themselves) log time on a **weekly timesheet**, Sunday through Saturday. For each entry they pick a job — or a non-job category like Paid Time Off, Shop, Business Development, or Lunch — set the start and stop times, and add a short description of the work.
+Field staff (and Admin / Office users for themselves) log time on a **weekly timesheet**, Sunday through Saturday. For each entry they pick a job — or a non-job category like Paid Time Off, Shop, Business Development, or Lunch — set the start and stop times, and add a short description of the work.
 
 Hours roll up per day and per week. Lunch is tracked but excluded from paid totals. Office and admin can view and adjust **any** employee's timesheet; there's a payroll lock so past weeks can't be quietly changed after they close. Timesheets can be exported to CSV for payroll.
 
 ### 4. Receipts & Job Costs
-Out in the field, crew members snap a photo of a receipt, assign it to a job, and enter the vendor, amount, and a note. Photos are compressed on the device so they upload fast even on weak signal. Receipts roll up as job expenses and can be exported, giving a real picture of costs per job.
+Out in the field, crew members snap a photo of a receipt, assign it to a job, and enter the vendor, amount, and a note. Photos are compressed on the device so they upload fast even on weak signal and keep file storage costs low. Receipts capture the credit-card side of a job's spending. A receipt can be reassigned to a different job if it's logged to the wrong one.
 
-### 5. Documents
-Office and admin attach files to a job — PDFs, images, or Word documents — for estimates, customer approvals, authorizations, satisfaction forms, and the like. Each document gets a short description and is listed with its date and a link to view it. This keeps the paper trail for a job in one place, accessible to the whole office team.
+### 5. Documents & Vendor Costs
+Office and admin attach files to a job — PDFs, images, or Word documents — for estimates, customer approvals, authorizations, satisfaction forms, and **vendor or subcontractor invoices** (flooring, electrical, plumbing, carpet, and the like). Each document gets a short description, a date, and a link to view it, all in one place.
+
+Critically, **each document can carry an optional dollar amount.** This is how MB2 captures the costs that *don't* go on a credit card — a subcontractor's bill or a materials quote uploaded as a PDF now contributes to the job's cost, not just its paper trail.
+
+Together, receipts and document amounts give the **Total Job Costs** for a job: the credit-card purchases (receipts) plus the vendor and subcontractor bills (documents), added into one running total on the job — with the breakdown of each visible. That's the complete cost of a job, in one place, as work happens.
 
 ### 6. Staying Informed — Automated Communication
 MB2 Core sends emails automatically so people don't have to go looking for information:
 
 - **Sunday morning** — each field staff member gets a personalized recap of their week's hours, with a reminder to confirm everything before payroll runs Monday.
 - **Monday morning** — office and admin get a **weekly job recap** (new leads, pipeline movement, activity) and admins get a **weekly hours-by-employee summary**.
-- **Anytime a job is created** — office and admin staff get an instant new-job alert.
+- **Anytime a job is created** — office and admin staff get an instant new-job alert, including the job's initial notes.
 
 These come from "MB2 Restore Core" so the team recognizes them at a glance.
 
@@ -135,9 +140,9 @@ These come from "MB2 Restore Core" so the team recognizes them at a glance.
 
 **Clean payroll.** Field staff log time all week; Sunday's reminder nudges them to finish before the Monday lock. Office reviews and exports the timesheet, confident the numbers are complete and can't be changed after the fact.
 
-**Job-cost visibility.** Because receipts and hours are captured against each job as work happens, MB2 can see the real cost of a project — not reconstruct it weeks later from a shoebox of receipts.
+**True job-cost visibility.** Because both sides of spending are captured against the job as work happens — credit-card receipts from the field *and* vendor/subcontractor invoices uploaded as documents with amounts — MB2 sees the real, complete cost of a project in real time, not reconstructed weeks later from a shoebox of receipts and a stack of invoices.
 
-**A complete job record.** Estimate, signed authorization, before/after photos, notes, time, and costs all live on the one job. If a question comes up months later — from a customer, an insurer, or an auditor — the whole history is in one place.
+**A complete job record.** Estimate, signed authorization, before/after photos, vendor invoices, notes, time, and costs all live on the one job. If a question comes up months later — from a customer, an insurer, or an auditor — the whole history is in one place.
 
 ---
 

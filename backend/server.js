@@ -245,7 +245,7 @@ app.get('/api/jobs/:id', h(async (req, res) => {
 }));
 
 app.post('/api/jobs', h(async (req, res) => {
-  const { customer_id, nickname, address, type, lead_source, emergency, notes } = req.body;
+  const { customer_id, nickname, address, type, lead_source, emergency, notes, created_by } = req.body;
   const jobId = uuidv4();
   const today = new Date().toISOString().split('T')[0];
   const status = emergency ? 'In Process' : 'Lead';
@@ -260,7 +260,7 @@ app.post('/api/jobs', h(async (req, res) => {
   // Notify admins of the new job (non-blocking — never affects the create response).
   (async () => {
     const cust = customer_id ? await get('SELECT name FROM customers WHERE id = $1', [customer_id]) : null;
-    sendNewJobAlert({ nickname, address, type, status, lead_source, date_received: today, customer_name: cust ? cust.name : '', notes });
+    sendNewJobAlert({ nickname, address, type, status, lead_source, date_received: today, customer_name: cust ? cust.name : '', notes, created_by });
   })().catch(() => {});
 }));
 
@@ -889,6 +889,7 @@ function newJobAlertHtml(job) {
       ${row('Status', job.status)}
       ${row('Lead Source', job.lead_source)}
       ${row('Date Received', job.date_received)}
+      ${row('Added By', job.created_by)}
     </table>
     ${job.notes && job.notes.trim() ? `<div style="margin-top:16px"><div style="color:#666;font-size:13px;margin-bottom:4px">Initial Notes</div><div style="background:#f9f9f9;border-left:3px solid ${orange};padding:10px 12px;border-radius:4px;font-size:14px;white-space:pre-wrap">${String(job.notes).replace(/[<>&]/g,'')}</div></div>` : ''}
     <p style="font-size:13px;color:#666;margin-top:18px">Log in to MB2 Core to view the full job.</p>

@@ -79,7 +79,8 @@ function IntakeForm({ onJobCreated, apiUrl, currentUser }) {
           emergency: formData.emergency,
           lead_source: formData.lead_source,
           phone: formData.customer_phone,
-          notes: formData.notes
+          notes: formData.notes,
+          created_by: currentUser?.name || 'Intake'
         })
       });
 
