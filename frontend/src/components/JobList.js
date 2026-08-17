@@ -19,7 +19,12 @@ function JobList({ jobs, loading, onViewJob }) {
   );
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusMenuRef = useRef(null);
-  const [filterType, setFilterType] = useState(prefs.filterType || 'all');
+  // Type filter mirrors Status: multi-select by exclusion.
+  const [hiddenTypes, setHiddenTypes] = useState(() =>
+    Array.isArray(prefs.hiddenTypes) ? prefs.hiddenTypes : []
+  );
+  const [typeMenuOpen, setTypeMenuOpen] = useState(false);
+  const typeMenuRef = useRef(null);
   const [search, setSearch] = useState(prefs.search || '');
   const [sortKey, setSortKey] = useState(prefs.sortKey || 'date_received');
   const [sortDir, setSortDir] = useState(prefs.sortDir || 'desc');
@@ -27,9 +32,9 @@ function JobList({ jobs, loading, onViewJob }) {
   // Save prefs whenever any of them change
   React.useEffect(() => {
     localStorage.setItem(PREFS_KEY, JSON.stringify({
-      viewMode, hiddenStatuses, filterType, search, sortKey, sortDir
+      viewMode, hiddenStatuses, hiddenTypes, search, sortKey, sortDir
     }));
-  }, [viewMode, hiddenStatuses, filterType, search, sortKey, sortDir]);
+  }, [viewMode, hiddenStatuses, hiddenTypes, search, sortKey, sortDir]);
 
   // Close the status menu when clicking outside it
   React.useEffect(() => {
@@ -40,6 +45,15 @@ function JobList({ jobs, loading, onViewJob }) {
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [statusMenuOpen]);
+
+  React.useEffect(() => {
+    if (!typeMenuOpen) return;
+    const onDocClick = (e) => {
+      if (typeMenuRef.current && !typeMenuRef.current.contains(e.target)) setTypeMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [typeMenuOpen]);
 
   // Build filter options from the ACTUAL data so they always match what's there
   const statusOptions = useMemo(() => {
@@ -101,7 +115,7 @@ function JobList({ jobs, loading, onViewJob }) {
     const q = search.trim().toLowerCase();
     let list = jobs.filter(job => {
       const statusMatch = !hiddenStatuses.includes(job.status);
-      const typeMatch = filterType === 'all' || job.type === filterType;
+      const typeMatch = !hiddenTypes.includes(job.type);
       const searchMatch = !q ||
         (job.nickname || '').toLowerCase().includes(q) ||
         (job.customer_name || '').toLowerCase().includes(q) ||
@@ -123,7 +137,7 @@ function JobList({ jobs, loading, onViewJob }) {
       return 0;
     });
     return list;
-  }, [jobs, hiddenStatuses, filterType, search, sortKey, sortDir]);
+  }, [jobs, hiddenStatuses, hiddenTypes, search, sortKey, sortDir]);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -163,6 +177,15 @@ function JobList({ jobs, loading, onViewJob }) {
   const statusLabel = hiddenStatuses.length === 0
     ? 'All Statuses'
     : `${visibleStatusCount} of ${statusList.length} statuses`;
+
+  const typeList = typeOptions.filter(t => t !== 'all');
+  const toggleType = (t) => setHiddenTypes(prev =>
+    prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]
+  );
+  const visibleTypeCount = typeList.filter(t => !hiddenTypes.includes(t)).length;
+  const typeLabel = hiddenTypes.length === 0
+    ? 'All Types'
+    : `${visibleTypeCount} of ${typeList.length} types`;
 
   const columns = [
     { key: 'nickname', label: 'Nickname' },
@@ -231,15 +254,33 @@ function JobList({ jobs, loading, onViewJob }) {
             </div>
           )}
         </div>
-        <div className="filter-group">
+        <div className="filter-group status-multi" ref={typeMenuRef}>
           <label>Type:</label>
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            {typeOptions.map(type => (
-              <option key={type} value={type}>
-                {type === 'all' ? 'All Types' : type}
-              </option>
-            ))}
-          </select>
+          <button
+            type="button"
+            className="status-menu-btn"
+            onClick={() => setTypeMenuOpen(o => !o)}
+          >
+            {typeLabel} <span className="status-caret">▾</span>
+          </button>
+          {typeMenuOpen && (
+            <div className="status-menu">
+              <div className="status-menu-actions">
+                <button type="button" onClick={() => setHiddenTypes([])}>Select all</button>
+                <button type="button" onClick={() => setHiddenTypes(typeList.slice())}>Clear all</button>
+              </div>
+              {typeList.map(type => (
+                <label key={type} className="status-menu-item">
+                  <input
+                    type="checkbox"
+                    checked={!hiddenTypes.includes(type)}
+                    onChange={() => toggleType(type)}
+                  />
+                  <span>{type}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
         <div className="filter-info">
           Showing {filteredJobs.length} of {jobs.length} jobs
