@@ -353,3 +353,73 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Multi-select status filter (checkbox dropdown) */
+.status-multi {
+  position: relative;
+}
+.status-menu-btn {
+  padding: 8px 12px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fff;
+  cursor: pointer;
+  color: #333;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.status-menu-btn:hover { border-color: #F26522; }
+.status-caret { color: #888; font-size: 12px; }
+.status-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  min-width: 220px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.status-menu-actions {
+  display: flex;
+  gap: 8px;
+  padding: 4px 4px 8px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 6px;
+}
+.status-menu-actions button {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #F26522;
+  background: #fff;
+  border: 1px solid #f3b694;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.status-menu-actions button:hover { background: #fdf0e9; }
+.status-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.status-menu-item:hover { background: #f7f8fa; }
+.status-menu-item input { cursor: pointer; width: 16px; height: 16px; }
+
+@media (max-width: 600px) {
+  .status-multi { width: 100%; }
+  .status-menu-btn { width: 100%; justify-content: space-between; }
+}

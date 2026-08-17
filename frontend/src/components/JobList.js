@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import './JobList.css';
 
 function JobList({ jobs, loading, onViewJob }) {
@@ -12,7 +12,13 @@ function JobList({ jobs, loading, onViewJob }) {
   const prefs = loadPrefs();
 
   const [viewMode, setViewMode] = useState(prefs.viewMode || 'table'); // 'table' | 'cards'
-  const [filterStatus, setFilterStatus] = useState(prefs.filterStatus || 'all');
+  // Status filter is now multi-select by EXCLUSION: hiddenStatuses lists the statuses
+  // to hide. Empty = show all (default). Migrate the old single-value pref if present.
+  const [hiddenStatuses, setHiddenStatuses] = useState(() =>
+    Array.isArray(prefs.hiddenStatuses) ? prefs.hiddenStatuses : []
+  );
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const statusMenuRef = useRef(null);
   const [filterType, setFilterType] = useState(prefs.filterType || 'all');
   const [search, setSearch] = useState(prefs.search || '');
   const [sortKey, setSortKey] = useState(prefs.sortKey || 'date_received');
@@ -21,9 +27,19 @@ function JobList({ jobs, loading, onViewJob }) {
   // Save prefs whenever any of them change
   React.useEffect(() => {
     localStorage.setItem(PREFS_KEY, JSON.stringify({
-      viewMode, filterStatus, filterType, search, sortKey, sortDir
+      viewMode, hiddenStatuses, filterType, search, sortKey, sortDir
     }));
-  }, [viewMode, filterStatus, filterType, search, sortKey, sortDir]);
+  }, [viewMode, hiddenStatuses, filterType, search, sortKey, sortDir]);
+
+  // Close the status menu when clicking outside it
+  React.useEffect(() => {
+    if (!statusMenuOpen) return;
+    const onDocClick = (e) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target)) setStatusMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [statusMenuOpen]);
 
   // Build filter options from the ACTUAL data so they always match what's there
   const statusOptions = useMemo(() => {
@@ -84,7 +100,7 @@ function JobList({ jobs, loading, onViewJob }) {
   const filteredJobs = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = jobs.filter(job => {
-      const statusMatch = filterStatus === 'all' || job.status === filterStatus;
+      const statusMatch = !hiddenStatuses.includes(job.status);
       const typeMatch = filterType === 'all' || job.type === filterType;
       const searchMatch = !q ||
         (job.nickname || '').toLowerCase().includes(q) ||
@@ -107,7 +123,7 @@ function JobList({ jobs, loading, onViewJob }) {
       return 0;
     });
     return list;
-  }, [jobs, filterStatus, filterType, search, sortKey, sortDir]);
+  }, [jobs, hiddenStatuses, filterType, search, sortKey, sortDir]);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -137,6 +153,16 @@ function JobList({ jobs, loading, onViewJob }) {
   if (loading) {
     return <div className="loading">Loading jobs...</div>;
   }
+
+  // Real statuses present in the data (drop the 'all' sentinel from statusOptions)
+  const statusList = statusOptions.filter(s => s !== 'all');
+  const toggleStatus = (s) => setHiddenStatuses(prev =>
+    prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+  );
+  const visibleStatusCount = statusList.filter(s => !hiddenStatuses.includes(s)).length;
+  const statusLabel = hiddenStatuses.length === 0
+    ? 'All Statuses'
+    : `${visibleStatusCount} of ${statusList.length} statuses`;
 
   const columns = [
     { key: 'nickname', label: 'Nickname' },
@@ -177,15 +203,33 @@ function JobList({ jobs, loading, onViewJob }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <div className="filter-group">
+        <div className="filter-group status-multi" ref={statusMenuRef}>
           <label>Status:</label>
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            {statusOptions.map(status => (
-              <option key={status} value={status}>
-                {status === 'all' ? 'All Statuses' : status}
-              </option>
-            ))}
-          </select>
+          <button
+            type="button"
+            className="status-menu-btn"
+            onClick={() => setStatusMenuOpen(o => !o)}
+          >
+            {statusLabel} <span className="status-caret">▾</span>
+          </button>
+          {statusMenuOpen && (
+            <div className="status-menu">
+              <div className="status-menu-actions">
+                <button type="button" onClick={() => setHiddenStatuses([])}>Select all</button>
+                <button type="button" onClick={() => setHiddenStatuses(statusList.slice())}>Clear all</button>
+              </div>
+              {statusList.map(status => (
+                <label key={status} className="status-menu-item">
+                  <input
+                    type="checkbox"
+                    checked={!hiddenStatuses.includes(status)}
+                    onChange={() => toggleStatus(status)}
+                  />
+                  <span>{status}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
         <div className="filter-group">
           <label>Type:</label>

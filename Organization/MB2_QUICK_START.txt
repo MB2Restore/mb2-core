@@ -1,0 +1,125 @@
+================================================================================
+MB2 RESTORE APP - QUICK START GUIDE
+================================================================================
+
+PROJECT LOCATION:
+C:\Users\DJ\Desktop\mb2-restore-app\
+
+================================================================================
+START SERVERS (Run in Two Separate Command Prompts)
+================================================================================
+
+Terminal 1 - Backend Server:
+cd C:\Users\DJ\Desktop\mb2-restore-app\backend
+npm install
+npm start
+
+Terminal 2 - Frontend Server:
+cd C:\Users\DJ\Desktop\mb2-restore-app\frontend
+npm start
+
+Then open: http://localhost:3000 in your browser
+
+================================================================================
+WHAT'S NEW IN THIS VERSION (All Tweaks Implemented)
+================================================================================
+
+✓ App defaults to Jobs tab (not Intake)
+✓ All job fields are editable except Job ID
+✓ New Date Invoiced field in Key Dates section
+✓ Date Received field defaults to today but can be edited
+✓ Work Type options: Water Mitigation, Mold Remediation, Fire Mitigation,
+  Repair, Biohazard Cleanup, Cleanup
+✓ Manual time tracking (date, start time, stop time, description)
+✓ Insurance Information is editable after first entry
+✓ Next Steps field is much larger (12-row textarea)
+✓ Project Amount auto-calculates from breakdown fields
+✓ Status badge colors are now readable (white text)
+✓ Header subtitle is now visible (gray color)
+
+================================================================================
+QUICK TEST CHECKLIST
+================================================================================
+
+1. Jobs Tab Defaults
+   ☐ App opens to Jobs tab
+
+2. Editable Fields (Click job, then "Edit")
+   ☐ Work Type dropdown works (6 options)
+   ☐ Lead Source is editable
+   ☐ Date Received is editable
+   ☐ Date Invoiced is editable
+   ☐ Customer fields are editable (name, address, phone, email)
+   ☐ Insurance Notes is editable
+   ☐ Next Steps has large text area
+
+3. Time Tracking
+   ☐ Date picker works
+   ☐ Start time field (HH:MM)
+   ☐ Stop time field (HH:MM)
+   ☐ Duration auto-calculates
+   ☐ Description field works
+   ☐ Can save time entry
+
+4. UI Colors
+   ☐ Status badge text is readable
+   ☐ Header subtitle is visible
+
+5. Project Amount
+   ☐ Project Amount is NOT editable
+   ☐ Changes to Mitigation/Repair/Other amounts auto-update Project Amount
+
+================================================================================
+KEY FILES
+================================================================================
+
+Backend (Node.js/Express):
+  - server.js (593 lines, all endpoints ready)
+  - jobs.db (SQLite database - auto-creates missing columns)
+
+Frontend (React):
+  - App.js (defaults to Jobs tab)
+  - JobDetail.js (all editable fields, calculations)
+  - JobDetail.css (status badge colors)
+  - TimeTracking.js (manual time entry form)
+  - IntakeForm.js (6 work type options)
+  - App.css (header subtitle color)
+
+================================================================================
+IF YOU ENCOUNTER ISSUES
+================================================================================
+
+Issue: "Cannot find module sqlite3"
+Fix: In backend folder, run: npm install
+
+Issue: "Port 5000 already in use"
+Fix: Kill the process using port 5000 or restart your machine
+
+Issue: "Failed to fetch from http://localhost:5000"
+Fix: Make sure backend server is running (Terminal 1 should show "Server running")
+
+Issue: Need to reset database
+Fix: Delete jobs.db file, then restart backend (it will recreate it)
+
+================================================================================
+PROJECT DOCUMENTATION
+================================================================================
+
+Full project tracker: MB2_RESTORE_PROJECT_TRACKER.md (in this folder)
+Contains:
+- Complete feature list
+- Database schema
+- Testing checklist
+- Known issues
+- File structure
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+1. Start both servers
+2. Test the app using the checklist above
+3. Document any issues or new requirements
+4. Send feedback back to Claude for next round of tweaks
+
+================================================================================
