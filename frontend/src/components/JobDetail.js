@@ -8,6 +8,8 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   // Office/Admin can delete jobs (e.g. duplicates or test records)
   const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'office';
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [jobData, setJobData] = useState(job);
   const [projectNotes, setProjectNotes] = useState([]);
   const [timeEntries, setTimeEntries] = useState([]);
@@ -388,12 +390,14 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     (parseFloat(editForm.repair_amount) || 0) +
     (parseFloat(editForm.other_amount) || 0);
 
+  // Type-to-confirm: the typed text must match the job name before delete is allowed.
+  const deleteLabel = jobData.nickname || jobData.address || '';
+  const deleteMatches =
+    deleteConfirmText.trim().length > 0 &&
+    deleteConfirmText.trim().toLowerCase() === deleteLabel.trim().toLowerCase();
+
   const handleDelete = async () => {
-    const label = jobData.nickname || jobData.address || 'this job';
-    if (!window.confirm(
-      `Delete "${label}"?\n\nThis permanently removes the job and all of its time entries, ` +
-      `receipts, and notes. This cannot be undone.`
-    )) return;
+    if (!deleteMatches) return; // safety: button is disabled, but guard anyway
     setDeleting(true);
     try {
       const res = await fetch(`${apiUrl}/api/jobs/${jobData.id}`, {
@@ -404,6 +408,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
         const d = await res.json().catch(() => ({}));
         throw new Error(d.error || 'Failed to delete job');
       }
+      setShowDeleteConfirm(false);
       if (onDeleted) onDeleted(jobData.id);
       else onBack();
     } catch (err) {
@@ -437,14 +442,56 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           {canDelete && !isEditing && (
             <button
               className="delete-job-btn"
-              onClick={handleDelete}
+              onClick={() => { setDeleteConfirmText(''); setShowDeleteConfirm(true); }}
               disabled={deleting}
             >
-              {deleting ? 'Deleting…' : 'Delete Job'}
+              Delete Job
             </button>
           )}
         </div>
       </div>
+
+      {/* Type-to-confirm delete modal */}
+      {showDeleteConfirm && (
+        <div className="jd-modal-overlay" onClick={() => !deleting && setShowDeleteConfirm(false)}>
+          <div className="jd-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="jd-modal-title">Delete this job?</h3>
+            <p className="jd-modal-warn">
+              This permanently deletes <strong>{deleteLabel}</strong> and everything logged to it —
+              all <strong>time entries, receipts, project notes, and documents</strong>. This cannot be undone.
+            </p>
+            <label className="jd-modal-label">
+              To confirm, type the job name: <strong>{deleteLabel}</strong>
+            </label>
+            <input
+              type="text"
+              className="jd-modal-input"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type the job name to enable delete"
+              autoFocus
+            />
+            <div className="jd-modal-actions">
+              <button
+                type="button"
+                className="jd-modal-cancel"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="jd-modal-delete"
+                onClick={handleDelete}
+                disabled={!deleteMatches || deleting}
+              >
+                {deleting ? 'Deleting…' : 'Delete Job'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="detail-grid">

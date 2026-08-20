@@ -620,7 +620,7 @@ app.delete('/api/documents/:id', requireAuth, requireOfficeOrAdmin, h(async (req
   res.json({ success: true });
 }));
 
-// Delete a job and its child records (time entries, receipts, project notes).
+// Delete a job and its child records (time entries, receipts, notes, documents).
 // Office or Admin only. Photos for the job's receipts are removed from storage too.
 app.delete('/api/jobs/:id', requireAuth, h(async (req, res) => {
   if (req.user.role !== 'admin' && req.user.role !== 'office') {
@@ -631,16 +631,21 @@ app.delete('/api/jobs/:id', requireAuth, h(async (req, res) => {
   const job = await get('SELECT id FROM jobs WHERE id = $1', [jobId]);
   if (!job) return res.status(404).json({ error: 'Job not found' });
 
-  // Clean up receipt photos from storage before deleting the rows
+  // Clean up receipt photos AND document files from storage before deleting the rows
   const photos = await all('SELECT photo_url FROM receipts WHERE job_id = $1', [jobId]);
   for (const p of photos) {
     if (p.photo_url) { try { await deletePhoto(p.photo_url); } catch (e) { /* ignore */ } }
+  }
+  const docs = await all('SELECT file_url FROM documents WHERE job_id = $1', [jobId]);
+  for (const d of docs) {
+    if (d.file_url) { try { await deletePhoto(d.file_url); } catch (e) { /* ignore */ } }
   }
 
   // Delete children first (no DB-level cascade defined), then the job
   await run('DELETE FROM receipts WHERE job_id = $1', [jobId]);
   await run('DELETE FROM time_entries WHERE job_id = $1', [jobId]);
   await run('DELETE FROM project_notes WHERE job_id = $1', [jobId]);
+  await run('DELETE FROM documents WHERE job_id = $1', [jobId]);
   await run('DELETE FROM jobs WHERE id = $1', [jobId]);
 
   res.json({ success: true });
