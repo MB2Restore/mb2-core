@@ -28,6 +28,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   const [search, setSearch] = useState(prefs.search || '');
   const [sortKey, setSortKey] = useState(prefs.sortKey || 'date_received');
   const [sortDir, setSortDir] = useState(prefs.sortDir || 'desc');
+  const [exporting, setExporting] = useState(false);
 
   // Save prefs whenever any of them change
   React.useEffect(() => {
@@ -188,7 +189,6 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
     : `${visibleTypeCount} of ${typeList.length} types`;
 
   const isAdmin = currentUser?.role === 'admin';
-  const [exporting, setExporting] = useState(false);
 
   // CSV cell escaper (quote if it contains comma, quote, or newline)
   const csvCell = (v) => {
