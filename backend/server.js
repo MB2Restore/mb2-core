@@ -578,7 +578,7 @@ const requireOfficeOrAdmin = (req, res, next) => {
 };
 
 // ===== JOBS EXPORT (admin) — full list with per-job cost aggregates for analysis =====
-app.get('/api/jobs/export-data', requireAuth, requireAdmin, h(async (req, res) => {
+app.get('/api/jobs-export', requireAuth, requireAdmin, h(async (req, res) => {
   const rows = await all(`
     SELECT
       j.nickname, j.type, j.lead_source, j.status,

@@ -202,7 +202,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   const exportJobs = async () => {
     setExporting(true);
     try {
-      const res = await fetch(`${apiUrl}/api/jobs/export-data`, {
+      const res = await fetch(`${apiUrl}/api/jobs-export`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Export failed');
