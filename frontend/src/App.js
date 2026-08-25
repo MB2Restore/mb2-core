@@ -210,7 +210,7 @@ function App() {
         )}
 
         {view === 'jobs' && (
-          <JobList jobs={jobs} loading={loading} onViewJob={handleViewJob} currentUser={currentUser} />
+          <JobList jobs={jobs} loading={loading} onViewJob={handleViewJob} currentUser={currentUser} token={token} apiUrl={API_URL} />
         )}
 
         {view === 'detail' && selectedJob && (

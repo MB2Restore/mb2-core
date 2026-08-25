@@ -577,6 +577,24 @@ const requireOfficeOrAdmin = (req, res, next) => {
   next();
 };
 
+// ===== JOBS EXPORT (admin) — full list with per-job cost aggregates for analysis =====
+app.get('/api/jobs/export-data', requireAuth, requireAdmin, h(async (req, res) => {
+  const rows = await all(`
+    SELECT
+      j.nickname, j.type, j.lead_source, j.status,
+      j.date_received, j.date_completed,
+      j.amount, j.project_amount, j.mitigation_amount, j.repair_amount, j.other_amount,
+      c.name AS customer_name,
+      COALESCE((SELECT SUM(te.duration_minutes) FROM time_entries te WHERE te.job_id = j.id), 0) AS total_minutes,
+      COALESCE((SELECT SUM(r.amount) FROM receipts r WHERE r.job_id = j.id), 0) AS total_receipts,
+      COALESCE((SELECT SUM(d.amount) FROM documents d WHERE d.job_id = j.id), 0) AS total_documents
+    FROM jobs j
+    LEFT JOIN customers c ON j.customer_id = c.id
+    ORDER BY j.date_received DESC NULLS LAST, j.created_date DESC
+  `);
+  res.json(rows);
+}));
+
 // ===== JOB DOCUMENTS ENDPOINTS (estimates, approvals, authorizations, etc.) =====
 
 // List documents for a job (any logged-in user who can reach the job)

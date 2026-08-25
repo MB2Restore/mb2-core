@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import './JobList.css';
 
-function JobList({ jobs, loading, onViewJob }) {
+function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   // Persist the Jobs view/filter/sort choices so they survive navigating away
   // (into a job and back) and app restarts. Stored under one localStorage key.
   const PREFS_KEY = 'mb2_jobs_prefs';
@@ -187,6 +187,59 @@ function JobList({ jobs, loading, onViewJob }) {
     ? 'All Types'
     : `${visibleTypeCount} of ${typeList.length} types`;
 
+  const isAdmin = currentUser?.role === 'admin';
+  const [exporting, setExporting] = useState(false);
+
+  // CSV cell escaper (quote if it contains comma, quote, or newline)
+  const csvCell = (v) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const money = (v) => { const n = parseFloat(v); return isNaN(n) ? '' : n.toFixed(2); };
+  const dateOnly = (v) => (v ? String(v).slice(0, 10) : '');
+
+  // Export ALL jobs (with cost aggregates) to CSV — admin only.
+  const exportJobs = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/jobs/export-data`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const data = await res.json();
+      const header = [
+        'Nickname', 'Customer Name', 'Type', 'Lead Source', 'Status',
+        'Date Received', 'Date Completed', 'Total Amount', 'Project Financials',
+        'Total Hours', 'Total Receipts', 'Total Document Amounts'
+      ];
+      const lines = [header.map(csvCell).join(',')];
+      data.forEach(j => {
+        const projectFinancials = (j.project_amount != null && j.project_amount !== '')
+          ? parseFloat(j.project_amount)
+          : (parseFloat(j.mitigation_amount) || 0) + (parseFloat(j.repair_amount) || 0) + (parseFloat(j.other_amount) || 0);
+        const hours = (parseFloat(j.total_minutes) || 0) / 60;
+        lines.push([
+          j.nickname, j.customer_name, j.type, j.lead_source, j.status,
+          dateOnly(j.date_received), dateOnly(j.date_completed),
+          money(j.amount), money(projectFinancials),
+          hours.toFixed(2), money(j.total_receipts), money(j.total_documents)
+        ].map(csvCell).join(','));
+      });
+      const csv = lines.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url; a.download = `mb2_jobs_${stamp}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      alert('Sorry, the export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const columns = [
     { key: 'nickname', label: 'Nickname' },
     { key: 'customer_name', label: 'Customer' },
@@ -215,6 +268,11 @@ function JobList({ jobs, loading, onViewJob }) {
             Cards
           </button>
         </div>
+        {isAdmin && (
+          <button className="jobs-export-btn" onClick={exportJobs} disabled={exporting}>
+            {exporting ? 'Exporting…' : 'Export CSV'}
+          </button>
+        )}
       </div>
 
       {/* Filters */}

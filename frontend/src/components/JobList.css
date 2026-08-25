@@ -423,3 +423,19 @@
   .status-multi { width: 100%; }
   .status-menu-btn { width: 100%; justify-content: space-between; }
 }
+
+/* Admin Export CSV button (Jobs toolbar) */
+.jobs-export-btn {
+  margin-left: auto;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.jobs-export-btn:hover:not(:disabled) { background: #2a2a44; }
+.jobs-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
