@@ -25,6 +25,12 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   );
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const typeMenuRef = useRef(null);
+  // Owner filter mirrors Status/Type: multi-select by exclusion. Blank owner = 'Unassigned'.
+  const [hiddenOwners, setHiddenOwners] = useState(() =>
+    Array.isArray(prefs.hiddenOwners) ? prefs.hiddenOwners : []
+  );
+  const [ownerMenuOpen, setOwnerMenuOpen] = useState(false);
+  const ownerMenuRef = useRef(null);
   const [search, setSearch] = useState(prefs.search || '');
   const [sortKey, setSortKey] = useState(prefs.sortKey || 'date_received');
   const [sortDir, setSortDir] = useState(prefs.sortDir || 'desc');
@@ -33,9 +39,9 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   // Save prefs whenever any of them change
   React.useEffect(() => {
     localStorage.setItem(PREFS_KEY, JSON.stringify({
-      viewMode, hiddenStatuses, hiddenTypes, search, sortKey, sortDir
+      viewMode, hiddenStatuses, hiddenTypes, hiddenOwners, search, sortKey, sortDir
     }));
-  }, [viewMode, hiddenStatuses, hiddenTypes, search, sortKey, sortDir]);
+  }, [viewMode, hiddenStatuses, hiddenTypes, hiddenOwners, search, sortKey, sortDir]);
 
   // Close the status menu when clicking outside it
   React.useEffect(() => {
@@ -56,6 +62,15 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [typeMenuOpen]);
 
+  React.useEffect(() => {
+    if (!ownerMenuOpen) return;
+    const onDocClick = (e) => {
+      if (ownerMenuRef.current && !ownerMenuRef.current.contains(e.target)) setOwnerMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [ownerMenuOpen]);
+
   // Build filter options from the ACTUAL data so they always match what's there
   const statusOptions = useMemo(() => {
     const set = new Set(jobs.map(j => j.status).filter(Boolean));
@@ -64,6 +79,15 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   const typeOptions = useMemo(() => {
     const set = new Set(jobs.map(j => j.type).filter(Boolean));
     return ['all', ...Array.from(set).sort()];
+  }, [jobs]);
+  // Owner: blank/whitespace displays and filters as 'Unassigned'.
+  const ownerLabelOf = (j) => (j.owner && String(j.owner).trim()) ? j.owner : 'Unassigned';
+  const ownerOptions = useMemo(() => {
+    const set = new Set(jobs.map(j => (j.owner && String(j.owner).trim()) ? j.owner : 'Unassigned'));
+    // Keep 'Unassigned' last; real names sorted alphabetically.
+    return Array.from(set).sort((a, b) =>
+      a === 'Unassigned' ? 1 : b === 'Unassigned' ? -1 : a.localeCompare(b)
+    );
   }, [jobs]);
 
   // Status colors are grouped by stage so the pipeline reads at a glance:
@@ -117,11 +141,12 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
     let list = jobs.filter(job => {
       const statusMatch = !hiddenStatuses.includes(job.status);
       const typeMatch = !hiddenTypes.includes(job.type);
+      const ownerMatch = !hiddenOwners.includes(ownerLabelOf(job));
       const searchMatch = !q ||
         (job.nickname || '').toLowerCase().includes(q) ||
         (job.customer_name || '').toLowerCase().includes(q) ||
         (job.address || '').toLowerCase().includes(q);
-      return statusMatch && typeMatch && searchMatch;
+      return statusMatch && typeMatch && ownerMatch && searchMatch;
     });
 
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -138,7 +163,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
       return 0;
     });
     return list;
-  }, [jobs, hiddenStatuses, hiddenTypes, search, sortKey, sortDir]);
+  }, [jobs, hiddenStatuses, hiddenTypes, hiddenOwners, search, sortKey, sortDir]);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -187,6 +212,15 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
   const typeLabel = hiddenTypes.length === 0
     ? 'All Types'
     : `${visibleTypeCount} of ${typeList.length} types`;
+
+  const ownerList = ownerOptions.slice();
+  const toggleOwner = (o) => setHiddenOwners(prev =>
+    prev.includes(o) ? prev.filter(x => x !== o) : [...prev, o]
+  );
+  const visibleOwnerCount = ownerList.filter(o => !hiddenOwners.includes(o)).length;
+  const ownerLabel = hiddenOwners.length === 0
+    ? 'All Owners'
+    : `${visibleOwnerCount} of ${ownerList.length} owners`;
 
   const isAdmin = currentUser?.role === 'admin';
 
@@ -244,7 +278,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
     { key: 'nickname', label: 'Nickname' },
     { key: 'customer_name', label: 'Customer' },
     { key: 'type', label: 'Type' },
-    { key: 'lead_source', label: 'Lead Source' },
+    { key: 'owner', label: 'Owner' },
     { key: 'status', label: 'Status' },
     { key: 'date_received', label: 'Date Received' },
     { key: 'latest_note', label: 'Latest Note' }
@@ -280,7 +314,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
         <input
           type="text"
           className="job-search"
-          placeholder="Search nickname, customer, address..."
+          placeholder="Search name, customer, address..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -340,6 +374,34 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
             </div>
           )}
         </div>
+        <div className="filter-group status-multi" ref={ownerMenuRef}>
+          <label>Owner:</label>
+          <button
+            type="button"
+            className="status-menu-btn"
+            onClick={() => setOwnerMenuOpen(o => !o)}
+          >
+            {ownerLabel} <span className="status-caret">▾</span>
+          </button>
+          {ownerMenuOpen && (
+            <div className="status-menu">
+              <div className="status-menu-actions">
+                <button type="button" onClick={() => setHiddenOwners([])}>Select all</button>
+                <button type="button" onClick={() => setHiddenOwners(ownerList.slice())}>Clear all</button>
+              </div>
+              {ownerList.map(owner => (
+                <label key={owner} className="status-menu-item">
+                  <input
+                    type="checkbox"
+                    checked={!hiddenOwners.includes(owner)}
+                    onChange={() => toggleOwner(owner)}
+                  />
+                  <span>{owner}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="filter-info">
           Showing {filteredJobs.length} of {jobs.length} jobs
         </div>
@@ -373,7 +435,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
                   <td className="td-nickname">{job.nickname || job.address}</td>
                   <td className="td-customer">{job.customer_name}</td>
                   <td className="td-type">{job.type}</td>
-                  <td className="td-source">{job.lead_source}</td>
+                  <td className="td-owner">{job.owner || 'Unassigned'}</td>
                   <td>
                     <span className="table-status" style={{ backgroundColor: getStatusColor(job.status) }}>
                       {job.status}
@@ -403,7 +465,7 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
               <div className="job-details">
                 <p><strong>Customer:</strong> {job.customer_name}</p>
                 <p><strong>Type:</strong> {job.type}</p>
-                <p><strong>Lead Source:</strong> {job.lead_source || '—'}</p>
+                <p><strong>Owner:</strong> {job.owner || 'Unassigned'}</p>
                 {job.latest_note && (
                   <p className="job-next-steps"><strong>Latest Note:</strong> {job.latest_note}</p>
                 )}

@@ -80,6 +80,7 @@ const initializeDatabase = async () => {
       mitigation_amount NUMERIC(12, 2),
       repair_amount NUMERIC(12, 2),
       other_amount NUMERIC(12, 2),
+      owner TEXT,
       insurance_notes TEXT,
       next_steps TEXT,
       docusketch_url TEXT,
@@ -161,6 +162,9 @@ const initializeDatabase = async () => {
 
   // Migration: add amount to documents if the table pre-dates this column
   await run(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS amount NUMERIC(12, 2)`);
+
+  // Migration: add owner (internal account owner) to jobs if the table pre-dates it
+  await run(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS owner TEXT`);
 
   // Seed default admin if no users exist
   const row = await get('SELECT COUNT(*)::int AS count FROM users');
@@ -250,12 +254,14 @@ app.post('/api/jobs', h(async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const status = emergency ? 'In Process' : 'Lead';
 
+  // Owner defaults to whoever added the job; editable later in Job Information.
+  const owner = created_by || null;
   await run(
-    `INSERT INTO jobs (id, customer_id, nickname, address, type, status, lead_source, date_received)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [jobId, customer_id, nickname, address, type, status, lead_source, today]
+    `INSERT INTO jobs (id, customer_id, nickname, address, type, status, lead_source, date_received, owner)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [jobId, customer_id, nickname, address, type, status, lead_source, today, owner]
   );
-  res.json({ id: jobId, customer_id, nickname, address, type, status, lead_source, date_received: today });
+  res.json({ id: jobId, customer_id, nickname, address, type, status, lead_source, date_received: today, owner });
 
   // Notify admins of the new job (non-blocking — never affects the create response).
   (async () => {
@@ -271,12 +277,14 @@ app.put('/api/jobs/:id', h(async (req, res) => {
     'nickname', 'address', 'type', 'status', 'lead_source', 'date_received',
     'assigned_to', 'notes', 'amount', 'customer_email', 'start_date',
     'date_completed', 'date_invoiced', 'project_amount', 'mitigation_amount',
-    'repair_amount', 'other_amount', 'insurance_notes', 'next_steps', 'docusketch_url'
+    'repair_amount', 'other_amount', 'insurance_notes', 'next_steps', 'docusketch_url',
+    'owner'
   ];
   // These columns coerce '' to NULL (dates / numerics)
   const nullable = new Set([
     'date_received', 'start_date', 'date_completed', 'date_invoiced',
-    'project_amount', 'mitigation_amount', 'repair_amount', 'other_amount', 'amount'
+    'project_amount', 'mitigation_amount', 'repair_amount', 'other_amount', 'amount',
+    'owner'
   ]);
 
   const updates = [];

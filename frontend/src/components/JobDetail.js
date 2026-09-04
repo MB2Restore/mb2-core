@@ -11,6 +11,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [jobData, setJobData] = useState(job);
+  const [ownerOptions, setOwnerOptions] = useState([]); // active Office/Admin users for Owner dropdown
   const [projectNotes, setProjectNotes] = useState([]);
   const [timeEntries, setTimeEntries] = useState([]);
   const [receipts, setReceipts] = useState([]);
@@ -47,6 +48,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     docusketch_url: job.docusketch_url || '',
     date_received: toDateInput(job.date_received),
     status: job.status,
+    owner: job.owner || '',
     // Key dates
     start_date: toDateInput(job.start_date),
     date_completed: toDateInput(job.date_completed),
@@ -79,8 +81,26 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     fetchTimeEntries();
     fetchReceipts();
     fetchDocuments();
+    fetchOwnerOptions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [job.id]);
+
+  // Owner must be an Office or Admin user; load the active ones for the dropdown.
+  const fetchOwnerOptions = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/api/users/active`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOwnerOptions(
+          data.filter(u => u.role === 'office' || u.role === 'admin').map(u => u.name)
+        );
+      }
+    } catch (err) {
+      console.error('Error fetching owner options:', err);
+    }
+  };
 
   const fetchProjectNotes = async () => {
     try {
@@ -238,6 +258,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           docusketch_url: editForm.docusketch_url,
           date_received: editForm.date_received || null,
           status: editForm.status,
+          owner: editForm.owner || null,
           customer_email: editForm.customer_email,
           start_date: editForm.start_date || null,
           date_completed: editForm.date_completed || null,
@@ -549,6 +570,30 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
               <div className="info-row">
                 <label>Work Type</label>
                 <span>{jobData.type}</span>
+              </div>
+            )}
+            {isEditing ? (
+              <div className="form-group">
+                <label>Owner</label>
+                <select
+                  name="owner"
+                  value={editForm.owner}
+                  onChange={handleEditChange}
+                >
+                  <option value="">Unassigned</option>
+                  {/* Preserve a current owner that is no longer an active Office/Admin user */}
+                  {editForm.owner && !ownerOptions.includes(editForm.owner) && (
+                    <option value={editForm.owner}>{editForm.owner}</option>
+                  )}
+                  {ownerOptions.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="info-row">
+                <label>Owner</label>
+                <span>{jobData.owner || 'Unassigned'}</span>
               </div>
             )}
             {isEditing ? (

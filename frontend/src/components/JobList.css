@@ -250,8 +250,8 @@
 
 /* ===== Search box ===== */
 .job-search {
-  flex: 1;
-  min-width: 200px;
+  flex: 0 1 230px;
+  min-width: 150px;
   padding: 9px 12px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -439,3 +439,11 @@
 }
 .jobs-export-btn:hover:not(:disabled) { background: #2a2a44; }
 .jobs-export-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Owner column cell (replaces Lead Source in the table) */
+.td-owner {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
