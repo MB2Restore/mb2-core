@@ -35,6 +35,7 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
   // These use sentinel IDs ("category:...") instead of a real job id.
   const TIME_CATEGORIES = [
     { id: 'category:pto', label: 'Paid Time Off' },
+    { id: 'category:holiday', label: 'Holiday' },
     { id: 'category:shop', label: 'Shop' },
     { id: 'category:bizdev', label: 'Business Development' },
     { id: 'category:unpaid', label: 'Unpaid Time Off' },

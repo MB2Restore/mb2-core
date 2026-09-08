@@ -3,6 +3,7 @@ import './WeeklyTimesheet.css';
 
 const CATEGORY_LABELS = {
   'category:pto': 'Paid Time Off',
+  'category:holiday': 'Holiday',
   'category:shop': 'Shop',
   'category:unpaid': 'Unpaid Time Off',
   'category:lunch': 'Lunch',
@@ -10,6 +11,7 @@ const CATEGORY_LABELS = {
 };
 const TIME_CATEGORIES = [
   { id: 'category:pto', label: 'Paid Time Off' },
+  { id: 'category:holiday', label: 'Holiday' },
   { id: 'category:shop', label: 'Shop' },
   { id: 'category:unpaid', label: 'Unpaid Time Off' },
   { id: 'category:lunch', label: 'Lunch' },

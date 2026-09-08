@@ -223,7 +223,7 @@ function buildFieldRecap(userName, timeEntries, receipts, weekParam) {
 }
 
 const CAT_LABELS = {
-  'category:pto': 'Paid Time Off', 'category:shop': 'Shop',
+  'category:pto': 'Paid Time Off', 'category:holiday': 'Holiday', 'category:shop': 'Shop',
   'category:unpaid': 'Unpaid Time Off', 'category:lunch': 'Lunch',
   'category:joblisted': 'Job Not Listed'
 };

@@ -3,6 +3,7 @@ import './TimesheetExport.css';
 
 const CATEGORY_LABELS = {
   'category:pto': 'Paid Time Off',
+  'category:holiday': 'Holiday',
   'category:shop': 'Shop',
   'category:unpaid': 'Unpaid Time Off',
   'category:lunch': 'Lunch',

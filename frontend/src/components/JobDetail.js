@@ -341,6 +341,7 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   // Friendly labels for non-job time categories (mirrors TimeTracking.js)
   const CATEGORY_LABELS = {
     'category:pto': 'Paid Time Off',
+    'category:holiday': 'Holiday',
     'category:shop': 'Shop',
     'category:bizdev': 'Business Development',
     'category:unpaid': 'Unpaid Time Off',
