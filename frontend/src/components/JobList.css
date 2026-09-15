@@ -203,6 +203,13 @@
     align-items: stretch;
   }
 
+  /* In the column layout, flex-basis controls HEIGHT — reset it so the search
+     box is a normal-height, full-width input instead of a tall empty box. */
+  .job-search {
+    flex: none;
+    width: 100%;
+  }
+
   .filter-group {
     width: 100%;
   }
