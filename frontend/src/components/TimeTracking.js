@@ -115,7 +115,10 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
     const [stopHour, stopMin] = formData.timeStop.split(':').map(Number);
 
     const startTotalMin = startHour * 60 + startMin;
-    const stopTotalMin = stopHour * 60 + stopMin;
+    // 12:00 AM (00:00) chosen as a STOP means end-of-day (midnight = 24:00), so an
+    // overnight shift is logged as two entries split at midnight, one per day.
+    let stopTotalMin = stopHour * 60 + stopMin;
+    if (stopTotalMin === 0) stopTotalMin = 24 * 60;
 
     return Math.max(0, stopTotalMin - startTotalMin);
   };
@@ -133,7 +136,8 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
       return;
     }
 
-    if (formData.timeStop <= formData.timeStart) {
+    // Allow a 12:00 AM stop (end-of-day); calculateDuration handles the midnight case.
+    if (calculateDuration() <= 0) {
       setError('Stop time must be after start time');
       return;
     }

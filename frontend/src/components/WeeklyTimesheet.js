@@ -221,8 +221,14 @@ function WeeklyTimesheet({ apiUrl, targetUser, canManage = false, jobs = [], ref
   const durationFor = (start, stop) => {
     const [sh, sm] = start.split(':').map(Number);
     const [eh, em] = stop.split(':').map(Number);
-    return Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+    // 12:00 AM (00:00) as a STOP means end-of-day (midnight = 24:00). This lets an
+    // overnight shift be logged as two entries split at midnight, one per day.
+    let endMin = eh * 60 + em;
+    if (endMin === 0) endMin = 24 * 60;
+    return Math.max(0, endMin - (sh * 60 + sm));
   };
+  // Valid when the stop is after the start (a 12:00 AM stop counts as midnight/end-of-day).
+  const isValidRange = (start, stop) => durationFor(start, stop) > 0;
 
   // ----- Edit existing -----
   const startEdit = (e) => {
@@ -242,7 +248,7 @@ function WeeklyTimesheet({ apiUrl, targetUser, canManage = false, jobs = [], ref
   const saveEdit = async (entry) => {
     if (!editForm.job_id) { setError('Please choose a job or category'); return; }
     if (!editForm.timeStart || !editForm.timeStop) { setError('Please set start and stop times'); return; }
-    if (editForm.timeStop <= editForm.timeStart) { setError('Stop time must be after start time'); return; }
+    if (!isValidRange(editForm.timeStart, editForm.timeStop)) { setError('Stop time must be after start time'); return; }
     setSavingEdit(true); setError('');
     try {
       const res = await fetch(`${apiUrl}/api/time-entries/${entry.id}`, {
@@ -282,7 +288,7 @@ function WeeklyTimesheet({ apiUrl, targetUser, canManage = false, jobs = [], ref
 
   const saveAdd = async () => {
     if (!addForm.job_id) { setError('Please choose a job or category'); return; }
-    if (addForm.timeStop <= addForm.timeStart) { setError('Stop time must be after start time'); return; }
+    if (!isValidRange(addForm.timeStart, addForm.timeStop)) { setError('Stop time must be after start time'); return; }
     setSavingAdd(true); setError('');
     try {
       const res = await fetch(`${apiUrl}/api/time-entries/manual`, {
