@@ -251,7 +251,10 @@ app.get('/api/jobs/:id', h(async (req, res) => {
 app.post('/api/jobs', h(async (req, res) => {
   const { customer_id, nickname, address, type, lead_source, emergency, notes, created_by } = req.body;
   const jobId = uuidv4();
-  const today = new Date().toISOString().split('T')[0];
+  // "Today" in MB2's business timezone (Eastern), NOT the server's UTC. Render runs in
+  // UTC, so toISOString() would record tomorrow's date for jobs added after ~8pm ET.
+  // en-CA formats as 'YYYY-MM-DD'.
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
   const status = emergency ? 'In Process' : 'Lead';
 
   // Owner defaults to whoever added the job; editable later in Job Information.

@@ -181,8 +181,12 @@ function JobList({ jobs, loading, onViewJob, currentUser, token, apiUrl }) {
 
   const fmtDate = (v) => {
     if (!v) return '';
-    const d = new Date(v);
-    return isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+    // Postgres returns dates as bare 'YYYY-MM-DD'. Parse the date part as a LOCAL date so
+    // the day doesn't shift back one across timezones — new Date('2026-09-21') parses as
+    // UTC midnight and renders as 9/20 in Eastern time. Mirrors JobDetail.formatDate.
+    const [y, m, d] = String(v).slice(0, 10).split('-').map(Number);
+    if (!y || !m || !d) return '';
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
   };
 
   const truncate = (s, n) => {
