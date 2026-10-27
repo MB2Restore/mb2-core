@@ -9,6 +9,7 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
   const [message, setMessage] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [timesheetRefresh, setTimesheetRefresh] = useState(0);
+  const [addAsNote, setAddAsNote] = useState(false);
   const [activeUsers, setActiveUsers] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(currentUser?.id || '');
 
@@ -142,7 +143,10 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
       return;
     }
 
-    if (!formData.description || !formData.description.trim()) {
+    // Lunch doesn't need a description; everything else does.
+    const isLunchEntry = selectedJobId === 'category:lunch';
+    const descText = isLunchEntry ? '' : (formData.description || '').trim();
+    if (!isLunchEntry && !descText) {
       setError('Please enter a description of the work');
       return;
     }
@@ -165,15 +169,34 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
           clock_in: clockInDateTime,
           clock_out: clockOutDateTime,
           duration_minutes: durationMinutes,
-          notes: formData.description
+          notes: descText
         })
       });
 
       if (!response.ok) throw new Error('Failed to log time entry');
       await response.json();
 
-      setMessage(`✓ Time entry logged - ${durationMinutes} minutes`);
-      setTimeout(() => setMessage(''), 3000);
+      // Optionally copy the description into the job's Project Notes.
+      let noteMsg = '';
+      if (addAsNote && descText && !isCategory(selectedJobId)) {
+        try {
+          const noteRes = await fetch(`${apiUrl}/api/jobs/${selectedJobId}/notes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ note_text: descText, created_by: currentUser?.name || 'Unknown' })
+          });
+          noteMsg = noteRes.ok ? ' + added as job note' : ' (but the job note could not be saved)';
+        } catch (noteErr) {
+          noteMsg = ' (but the job note could not be saved)';
+        }
+      }
+
+      setMessage(`✓ Time entry logged - ${durationMinutes} minutes${noteMsg}`);
+      setTimeout(() => setMessage(''), 4000);
+      setAddAsNote(false);
 
       // Reset form
       setFormData({
@@ -341,16 +364,28 @@ function TimeTracking({ jobs, apiUrl, currentUser, token }) {
               )}
 
               <div className="form-group">
-                <label>Description</label>
+                <label>Description{selectedJobId === 'category:lunch' ? ' (not needed for Lunch)' : ''}</label>
                 <textarea
                   name="description"
-                  value={formData.description}
+                  value={selectedJobId === 'category:lunch' ? '' : formData.description}
                   onChange={handleFormChange}
-                  placeholder="What did you work on?"
+                  placeholder={selectedJobId === 'category:lunch' ? 'Not needed for Lunch' : 'What did you work on?'}
                   rows="3"
-                  required
+                  disabled={selectedJobId === 'category:lunch'}
+                  required={selectedJobId !== 'category:lunch'}
                 />
               </div>
+
+              {selectedJobId && !isCategory(selectedJobId) && (
+                <label className="add-as-note">
+                  <input
+                    type="checkbox"
+                    checked={addAsNote}
+                    onChange={(e) => setAddAsNote(e.target.checked)}
+                  />
+                  Add as a Note on this job
+                </label>
+              )}
 
               <button type="submit" className="submit-time-btn" disabled={!selectedJobId}>
                 Log Time Entry

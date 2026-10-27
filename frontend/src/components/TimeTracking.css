@@ -283,3 +283,23 @@
     font-size: 22px;
   }
 }
+
+/* "Add as a Note" checkbox under the time-entry description */
+.add-as-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 16px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.add-as-note input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.time-tracking-container textarea:disabled {
+  background: #f0f0f0;
+  color: #999;
+  cursor: not-allowed;
+}
