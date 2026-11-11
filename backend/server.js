@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 
 // PostgreSQL helpers (async). SQL uses $1,$2,... placeholders.
 const { pool, all, get, run } = require('./db');
+const { initBudgetTables, registerBudgetRoutes, deleteBudgetsForJob } = require('./budgets');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -165,6 +166,9 @@ const initializeDatabase = async () => {
 
   // Migration: add owner (internal account owner) to jobs if the table pre-dates it
   await run(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS owner TEXT`);
+
+  // Trade budgets (from Xactimate repair estimates) — see budgets.js
+  await initBudgetTables(run);
 
   // Seed default admin if no users exist
   const row = await get('SELECT COUNT(*)::int AS count FROM users');
@@ -588,6 +592,9 @@ const requireOfficeOrAdmin = (req, res, next) => {
   next();
 };
 
+// ===== TRADE BUDGET ENDPOINTS (budgets.js) =====
+registerBudgetRoutes(app, { all, get, run, h, requireAuth, requireOfficeOrAdmin });
+
 // ===== JOBS EXPORT (admin) — full list with per-job cost aggregates for analysis =====
 app.get('/api/jobs-export', requireAuth, requireAdmin, h(async (req, res) => {
   const rows = await all(`
@@ -668,6 +675,12 @@ app.delete('/api/jobs/:id', requireAuth, h(async (req, res) => {
   const docs = await all('SELECT file_url FROM documents WHERE job_id = $1', [jobId]);
   for (const d of docs) {
     if (d.file_url) { try { await deletePhoto(d.file_url); } catch (e) { /* ignore */ } }
+  }
+
+  // Trade budget PDFs + rows
+  const budgetFiles = await deleteBudgetsForJob(all, run, jobId);
+  for (const url of budgetFiles) {
+    try { await deletePhoto(url); } catch (e) { /* ignore */ }
   }
 
   // Delete children first (no DB-level cascade defined), then the job
