@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './JobDetail.css';
+import TradeBudget from './TradeBudget';
 
 function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
   // Field staff get a limited, view-only job view (no financials/time/receipts/notes, no editing)
@@ -915,6 +916,19 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           </div>
         </div>
       ) : null}
+
+      {/* Trade Budget (Office/Admin only) — right after Project Financials */}
+      {canManageDocs && (
+        <TradeBudget
+          job={jobData}
+          apiUrl={apiUrl}
+          token={token}
+          onRepairAmountChanged={(repair) => {
+            setEditForm(prev => ({ ...prev, repair_amount: repair ?? '' }));
+            setJobData(prev => ({ ...prev, repair_amount: repair }));
+          }}
+        />
+      )}
 
       {/* Insurance Notes Section */}
       {!isFieldView && (isEditing || editForm.insurance_notes) ? (
