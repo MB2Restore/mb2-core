@@ -37,6 +37,13 @@ function TradeBudget({ job, apiUrl, token, onRepairAmountChanged }) {
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
+  // Components report (materials / labor split) for the current budget
+  const [showComp, setShowComp] = useState(false);
+  const [compFile, setCompFile] = useState(null);
+  const [compPreview, setCompPreview] = useState(null);
+  const [compBusy, setCompBusy] = useState(false);
+  const [compError, setCompError] = useState('');
+
   const auth = { Authorization: `Bearer ${token}` };
 
   const load = useCallback(async () => {
@@ -110,6 +117,55 @@ function TradeBudget({ job, apiUrl, token, onRepairAmountChanged }) {
     }
   };
 
+  const openComp = () => { setShowComp(true); setCompFile(null); setCompPreview(null); setCompError(''); };
+  const closeComp = () => { if (!compBusy) setShowComp(false); };
+
+  const onPickComp = (e) => {
+    const f = e.target.files && e.target.files[0];
+    setCompPreview(null); setCompError('');
+    if (!f || !current) return;
+    if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') { setCompError('Please choose the Xactimate components report PDF.'); return; }
+    if (f.size > MAX_MB * 1024 * 1024) { setCompError(`"${f.name}" is over ${MAX_MB} MB.`); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = String(reader.result).replace(/^data:[^;]*;/, 'data:application/pdf;');
+      setCompFile({ name: f.name, dataUrl });
+      setCompBusy(true);
+      try {
+        const res = await fetch(`${apiUrl}/api/budgets/${current.id}/components/preview`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...auth }, body: JSON.stringify({ file: dataUrl }),
+        });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || 'Could not read this components report');
+        setCompPreview(d);
+      } catch (err) {
+        setCompError(err.message);
+      } finally {
+        setCompBusy(false);
+      }
+    };
+    reader.readAsDataURL(f);
+  };
+
+  const saveComp = async () => {
+    if (!compFile || !compPreview || !current) return;
+    setCompBusy(true); setCompError('');
+    try {
+      const res = await fetch(`${apiUrl}/api/budgets/${current.id}/components`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...auth },
+        body: JSON.stringify({ file: compFile.dataUrl, filename: compFile.name }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Could not save the components report');
+      setShowComp(false);
+      await load();
+    } catch (err) {
+      setCompError(err.message);
+    } finally {
+      setCompBusy(false);
+    }
+  };
+
   // Printer-friendly page (opens in a new tab and prints).
   const printBudget = async (budgetId) => {
     let b = current;
@@ -118,7 +174,10 @@ function TradeBudget({ job, apiUrl, token, onRepairAmountChanged }) {
       b = await res.json();
     }
     if (!b) return;
-    const rows = b.lines.map((l) => `<tr><td>${esc(l.category)}</td><td class="r">${money(l.pre_op)}</td><td class="r b">${money(l.budget)}</td><td>${esc(l.line_type)}</td><td class="act"></td><td></td></tr>`).join('');
+    const sp = Boolean(b.components_file_url);
+    const splitCells = (l) => (sp ? `<td class="r">${l.materials_budget === null ? '–' : money(l.materials_budget)}</td><td class="r">${l.labor_budget === null ? '–' : money(l.labor_budget)}</td>` : '');
+    const rows = b.lines.map((l) => `<tr><td>${esc(l.category)}</td><td class="r">${money(l.pre_op)}</td><td class="r b">${money(l.budget)}</td>${splitCells(l)}<td>${esc(l.line_type)}</td><td class="act"></td><td></td></tr>`).join('');
+    const sumOf = (k) => b.lines.reduce((a, l) => a + (l[k] || 0), 0);
     const bids = b.bids.length ? b.bids.map((x) => `${esc(x.description)} ${money(x.amount)}`).join('; ') : 'None';
     const w = window.open('', '_blank');
     if (!w) { setError('Allow pop-ups to print the budget.'); return; }
@@ -144,8 +203,8 @@ tfoot td{font-weight:700;border-top:1px solid #111;border-bottom:0}
 <div class="hd"><div><div class="k">MB2 Restore · Trade Budget</div><h1>${esc(job.nickname || job.address)}</h1><div>${esc(job.address)}</div></div>
 <div class="meta">Version ${b.version} · ${esc(KIND_LABEL[b.kind] || b.kind)}<br>${esc(b.filename || '')}<br>Approved ${fmtDate(b.created_date)} by ${esc(b.approved_by || '')} · Printed ${new Date().toLocaleDateString('en-US')}</div></div>
 <div class="tot"><div>Xactimate total<b>${money(b.xactimate_total)}</b></div><div>Pre-O&amp;P (repairs)<b>${money(b.pre_op_total)}</b></div><div>Trade budget<b>${money(b.budget_total)}</b></div><div>Bid items (100%)<b>${money(b.bid_total)}</b></div></div>
-<table><thead><tr><th>Xactimate category</th><th class="r">Pre-O&amp;P</th><th class="r">Budget</th><th>Type</th><th class="r">Actual</th><th>Notes</th></tr></thead>
-<tbody>${rows}</tbody><tfoot><tr><td>Total</td><td class="r">${money(b.pre_op_total)}</td><td class="r">${money(b.budget_total)}</td><td></td><td class="act"></td><td></td></tr></tfoot></table>
+<table><thead><tr><th>Xactimate category</th><th class="r">Pre-O&amp;P</th><th class="r">Budget</th>${sp ? '<th class="r">Materials</th><th class="r">Labor</th>' : ''}<th>Type</th><th class="r">Actual</th><th>Notes</th></tr></thead>
+<tbody>${rows}</tbody><tfoot><tr><td>Total</td><td class="r">${money(b.pre_op_total)}</td><td class="r">${money(b.budget_total)}</td>${sp ? `<td class="r">${money(sumOf('materials_budget'))}</td><td class="r">${money(sumOf('labor_budget'))}</td>` : ''}<td></td><td class="act"></td><td></td></tr></tfoot></table>${sp ? '<div class="notes">Materials / Labor from the Xactimate components report (both at the budget %). "–" = not broken out.</div>' : ''}
 <div class="notes"><b>Bid items:</b> ${bids}<br><b>Excluded:</b> mitigation ${money(b.mitigation_excluded)}. Budget covers repairs only.${b.sales_tax ? ` Sales tax ${money(b.sales_tax)} (not budgeted).` : ''}<br>
 <b>How the budget is set:</b> bid items at 100% of the bid; all other work at ${Math.round((b.budget_pct || 0.75) * 100)}% of the Xactimate pre-O&amp;P total, before 10% overhead and 10% profit.</div>
 <div class="ft"><span>MB2 Restore LLC · 933 Islington St, Portsmouth, NH 03801</span><span>Printed from MB2 Core</span></div>
@@ -153,6 +212,8 @@ tfoot td{font-weight:700;border-top:1px solid #111;border-bottom:0}
     w.document.close();
   };
 
+  const hasSplit = Boolean(current && current.components_file_url);
+  const splitTotal = (k) => (current ? current.lines.reduce((a, l) => a + (l[k] || 0), 0) : 0);
   const opt = preview && kind ? preview.options[kind] : null;
   const changedRows = opt ? (kind === 'original' ? opt.changes : opt.changes.filter((c) => c.changed)) : [];
   const unchangedCount = opt && kind !== 'original' ? opt.changes.length - changedRows.length : 0;
@@ -170,6 +231,7 @@ tfoot td{font-weight:700;border-top:1px solid #111;border-bottom:0}
         </div>
         <div className="tb-actions">
           {current && <button type="button" className="tb-btn" onClick={() => printBudget()}>Print</button>}
+          {current && <button type="button" className="tb-btn" onClick={openComp}>{current.components_file_url ? 'Replace components report' : 'Add components report'}</button>}
           {history.length > 0 && <button type="button" className="tb-btn" onClick={() => setShowHistory((v) => !v)}>History ({history.length})</button>}
           <button type="button" className="tb-btn tb-btn-primary" onClick={openUpload}>{current ? 'Upload revised estimate / supplement' : 'Upload repair estimate'}</button>
         </div>
@@ -213,23 +275,77 @@ tfoot td{font-weight:700;border-top:1px solid #111;border-bottom:0}
           )}
           <div className="tb-table-wrap">
             <table className="tb-table">
-              <thead><tr><th>Xactimate category</th><th className="r">Pre-O&amp;P total</th><th className="r">Budget</th><th>Type</th><th className="r tb-later">Actual</th><th className="r tb-later">Remaining</th></tr></thead>
+              <thead><tr><th>Xactimate category</th><th className="r">Pre-O&amp;P total</th><th className="r">Budget</th>{hasSplit && <><th className="r">Materials</th><th className="r">Labor</th></>}<th>Type</th><th className="r tb-later">Actual</th><th className="r tb-later">Remaining</th></tr></thead>
               <tbody>
                 {current.lines.map((l) => (
                   <tr key={l.id} className={l.bid_amount > 0 ? 'tb-row-bid' : ''}>
                     <td>{l.category}</td><td className="r">{money(l.pre_op)}</td><td className="r b">{money(l.budget)}</td>
+                    {hasSplit && <><td className="r" title={l.materials_budget === null ? 'Not broken out' : undefined}>{l.materials_budget === null ? '–' : money(l.materials_budget)}</td><td className="r" title={l.labor_budget === null ? 'Not broken out' : undefined}>{l.labor_budget === null ? '–' : money(l.labor_budget)}</td></>}
                     <td><span className={typeClass(l.line_type)}>{l.line_type}</span></td><td className="r tb-later">–</td><td className="r tb-later">–</td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot><tr><td>Total</td><td className="r">{money(current.pre_op_total)}</td><td className="r">{money(current.budget_total)}</td><td></td><td className="r tb-later">–</td><td className="r tb-later">–</td></tr></tfoot>
+              <tfoot><tr><td>Total</td><td className="r">{money(current.pre_op_total)}</td><td className="r">{money(current.budget_total)}</td>{hasSplit && <><td className="r">{money(splitTotal('materials_budget'))}</td><td className="r">{money(splitTotal('labor_budget'))}</td></>}<td></td><td className="r tb-later">–</td><td className="r tb-later">–</td></tr></tfoot>
             </table>
           </div>
           {current.bids.length > 0 && (
             <div className="tb-bids"><strong>Bid items:</strong> {current.bids.map((b) => `${b.description} ${money(b.amount)}`).join(' · ')}</div>
           )}
+          {hasSplit
+            ? <div className="tb-muted">Materials / Labor from components report {current.components_filename} · added {fmtDate(current.components_added_date)} by {current.components_added_by} · <a href={current.components_file_url} target="_blank" rel="noopener noreferrer">PDF</a>. "–" = not broken out (e.g. supervision, bids are in Budget).</div>
+            : <div className="tb-muted">Add the Xactimate components report to split each category into materials and labor.</div>}
           <div className="tb-muted">Actual and Remaining fill in later with job costing.</div>
         </>
+      )}
+
+      {showComp && current && (
+        <div className="tb-modal-backdrop" onClick={closeComp}>
+          <div className="tb-modal" role="dialog" aria-modal="true" aria-labelledby="tb-comp-title" onClick={(e) => e.stopPropagation()}>
+            <div className="tb-modal-head">
+              <div>
+                <h3 id="tb-comp-title" className="tb-title">Add components report</h3>
+                <div className="tb-sub">Splits budget version {current.version} into materials and labor. The budget totals don't change.{compFile ? ` · ${compFile.name}` : ''}</div>
+              </div>
+              <button type="button" className="tb-close" aria-label="Close" onClick={closeComp}>×</button>
+            </div>
+            <label className="tb-file">
+              <span>Xactimate components report (PDF)</span>
+              <input type="file" accept="application/pdf,.pdf" onChange={onPickComp} disabled={compBusy} />
+            </label>
+            {compBusy && !compPreview && <div className="tb-muted">Reading the components report…</div>}
+            {compError && <div className="tb-alert tb-alert-error">{compError}</div>}
+            {compPreview && (
+              <>
+                <div className="tb-alert">
+                  {compPreview.lines.filter((l) => l.split).length} of {compPreview.lines.length} categories split.
+                  {compPreview.unmapped_materials > 0 && ` ${money(compPreview.unmapped_materials)} of materials didn't match a category.`}
+                </div>
+                <div className="tb-table-wrap">
+                  <table className="tb-table">
+                    <thead><tr><th>Category</th><th className="r">Budget</th><th className="r">Materials</th><th className="r">Labor</th></tr></thead>
+                    <tbody>
+                      {compPreview.lines.map((l) => (
+                        <tr key={l.category}>
+                          <td>{l.category}</td><td className="r b">{money(l.budget)}</td>
+                          {l.split
+                            ? <><td className="r">{money(l.materials_budget)}</td><td className="r">{money(l.labor_budget)}</td></>
+                            : <td className="tb-muted" colSpan={2}>Not broken out</td>}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="tb-modal-foot">
+                  <span className="tb-muted">A new revised estimate or supplement clears this split until a new components report is added.</span>
+                  <span className="tb-actions">
+                    <button type="button" className="tb-btn" onClick={closeComp} disabled={compBusy}>Cancel</button>
+                    <button type="button" className="tb-btn tb-btn-primary" onClick={saveComp} disabled={compBusy}>{compBusy ? 'Saving…' : 'Save split'}</button>
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {showUpload && (

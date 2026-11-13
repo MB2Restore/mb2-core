@@ -60,6 +60,13 @@ const initBudgetTables = async (run) => {
       source_version INTEGER              -- which upload this bid came from
     )
   `);
+  // Materials / labor split from the Xactimate components report (added Nov 2026)
+  await run(`ALTER TABLE job_budgets ADD COLUMN IF NOT EXISTS components_file_url TEXT`);
+  await run(`ALTER TABLE job_budgets ADD COLUMN IF NOT EXISTS components_filename TEXT`);
+  await run(`ALTER TABLE job_budgets ADD COLUMN IF NOT EXISTS components_added_by TEXT`);
+  await run(`ALTER TABLE job_budgets ADD COLUMN IF NOT EXISTS components_added_date TIMESTAMP`);
+  await run(`ALTER TABLE job_budget_lines ADD COLUMN IF NOT EXISTS materials_budget NUMERIC(12, 2)`);
+  await run(`ALTER TABLE job_budget_lines ADD COLUMN IF NOT EXISTS labor_budget NUMERIC(12, 2)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_job_budgets_job ON job_budgets (job_id)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_job_budget_lines_budget ON job_budget_lines (budget_id)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_job_budget_bids_budget ON job_budget_bids (budget_id)`);
@@ -89,7 +96,8 @@ const loadBudget = async (all, get, budgetId) => {
     'SELECT * FROM job_budget_bids WHERE budget_id = $1 ORDER BY source_version, category', [budgetId]);
   return {
     ...shapeBudget(b),
-    lines: lines.map((l) => ({ ...l, pre_op: num(l.pre_op), bid_amount: num(l.bid_amount), budget: num(l.budget) })),
+    lines: lines.map((l) => ({ ...l, pre_op: num(l.pre_op), bid_amount: num(l.bid_amount), budget: num(l.budget),
+      materials_budget: num(l.materials_budget), labor_budget: num(l.labor_budget) })),
     bids: bids.map((x) => ({ ...x, amount: num(x.amount) })),
   };
 };
@@ -97,7 +105,9 @@ const loadBudget = async (all, get, budgetId) => {
 // Remove every budget row for a job (called when a job is deleted).
 // Returns the stored PDF urls so the caller can delete the files from storage.
 const deleteBudgetsForJob = async (all, run, jobId) => {
-  const files = await all('SELECT file_url FROM job_budgets WHERE job_id = $1', [jobId]);
+  const files = await all(
+    `SELECT file_url FROM job_budgets WHERE job_id = $1
+     UNION ALL SELECT components_file_url FROM job_budgets WHERE job_id = $1`, [jobId]);
   await run('DELETE FROM job_budget_bids WHERE job_id = $1', [jobId]);
   await run('DELETE FROM job_budget_lines WHERE job_id = $1', [jobId]);
   await run('DELETE FROM job_budgets WHERE job_id = $1', [jobId]);
@@ -109,6 +119,7 @@ const { v4: uuidv4 } = require('uuid');
 const { pool } = require('./db');
 const { saveDocument } = require('./storage');
 const { readEstimate, summarize, addressMatches } = require('./estimateParser');
+const { readComponents } = require('./componentsParser');
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -293,6 +304,51 @@ const registerBudgetRoutes = (app, { all, get, h, requireAuth, requireOfficeOrAd
   }));
 
   // One specific version (for History and Print).
+  // ----- Components report: split the CURRENT budget's categories into materials / labor -----
+  const componentsFor = async (budgetId, dataUrl) => {
+    const budget = await loadBudget(all, get, budgetId);
+    if (!budget) { const e = new Error('Budget not found'); e.status = 404; throw e; }
+    const latest = await get('SELECT id FROM job_budgets WHERE job_id = $1 ORDER BY version DESC LIMIT 1', [budget.job_id]);
+    if (latest.id !== budgetId) { const e = new Error('Components can only be added to the current budget version.'); e.status = 400; throw e; }
+    let split;
+    try { split = await readComponents(pdfBuffer(dataUrl), budget.lines, budget.budget_pct ?? 0.75); }
+    catch (err) { err.status = err.status || 400; throw err; }
+    return { budget, split };
+  };
+
+  app.post('/api/budgets/:id/components/preview', requireAuth, requireOfficeOrAdmin, async (req, res) => {
+    try {
+      const { budget, split } = await componentsFor(req.params.id, req.body.file);
+      res.json({ ...split, pre_op_total: budget.pre_op_total, budget_total: budget.budget_total,
+        lines: split.lines.map((l) => ({ ...l, budget: budget.lines.find((b) => b.category === l.category).budget })) });
+    } catch (err) { console.error('Components preview:', err.message); fail(res, err); }
+  });
+
+  app.post('/api/budgets/:id/components', requireAuth, requireOfficeOrAdmin, async (req, res) => {
+    const client = await pool.connect();
+    try {
+      const { budget, split } = await componentsFor(req.params.id, req.body.file);
+      const saved = await saveDocument(req.body.file, req.body.filename || 'components.pdf');
+      if (saved.error) return res.status(400).json({ error: saved.error });
+      await client.query('BEGIN');
+      for (const l of split.lines) {
+        const row = budget.lines.find((b) => b.category === l.category);
+        await client.query('UPDATE job_budget_lines SET materials_budget = $1, labor_budget = $2 WHERE id = $3',
+          [l.split ? l.materials_budget : null, l.split ? l.labor_budget : null, row.id]);
+      }
+      await client.query(
+        `UPDATE job_budgets SET components_file_url = $1, components_filename = $2, components_added_by = $3,
+                components_added_date = CURRENT_TIMESTAMP WHERE id = $4`,
+        [saved.url, req.body.filename || null, req.user.name || req.user.email, budget.id]);
+      await client.query('COMMIT');
+      res.json(await loadBudget(all, get, budget.id));
+    } catch (err) {
+      try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
+      console.error('Components save:', err.message);
+      fail(res, err);
+    } finally { client.release(); }
+  });
+
   app.get('/api/budgets/:id', requireAuth, requireOfficeOrAdmin, h(async (req, res) => {
     const budget = await loadBudget(all, get, req.params.id);
     if (!budget) return res.status(404).json({ error: 'Budget not found' });
