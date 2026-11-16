@@ -161,9 +161,15 @@ function BillingStatements({ jobs, apiUrl, token, currentUser }) {
         if (!r2.ok) { setEditing(s); await load(); throw new Error(`Saved, but not sent: ${d2.error || 'email failed'}`); }
         s = d2;
       }
-      setEditing(s);
       await load();
-      flash(andSend ? `Statement ${s.number} sent to the Admins.` : `Statement ${s.number} saved. Mitigation set to ${money(s.total)}.`);
+      if (andSend) {
+        // Back to the list after sending, so nobody hits Send twice.
+        setEditing(null); setView('list');
+        flash(`Statement ${s.number} sent to the Controller (all Admins).`);
+      } else {
+        setEditing(s);
+        flash(`Statement ${s.number} saved. Mitigation set to ${money(s.total)}.`);
+      }
     } catch (e) { setFormError(e.message); } finally { setBusy(false); }
   };
 
@@ -175,7 +181,7 @@ function BillingStatements({ jobs, apiUrl, token, currentUser }) {
       const r = await fetch(`${apiUrl}/api/billing-statements/${editing.id}/send`, { method: 'POST', headers: auth });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || 'Could not send');
-      setEditing(d); await load(); flash(`Statement ${d.number} sent to the Admins.`);
+      await load(); setEditing(null); setView('list'); flash(`Statement ${d.number} sent to the Controller (all Admins).`);
     } catch (e) { setFormError(e.message); } finally { setBusy(false); }
   };
 
