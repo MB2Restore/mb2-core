@@ -24,7 +24,7 @@ if (!RESEND_API_KEY) {
 
 // Send one email. Returns { ok, id?, error?, skipped? }.
 // `to` may be a string or array of strings.
-async function sendEmail({ to, subject, html }) {
+async function sendEmail({ to, subject, html, attachments }) {
   const recipients = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
   if (recipients.length === 0) return { ok: false, error: 'No recipient' };
 
@@ -40,7 +40,8 @@ async function sendEmail({ to, subject, html }) {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html })
+      // attachments: [{ filename, content: <base64 string> }] (optional)
+      body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html, ...(attachments && attachments.length ? { attachments } : {}) })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {

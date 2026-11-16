@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 // PostgreSQL helpers (async). SQL uses $1,$2,... placeholders.
 const { pool, all, get, run } = require('./db');
 const { initBudgetTables, registerBudgetRoutes, deleteBudgetsForJob } = require('./budgets');
+const { initBillingTables, registerBillingRoutes, deleteBillingForJob } = require('./billing');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -170,6 +171,9 @@ const initializeDatabase = async () => {
   // Trade budgets (from Xactimate repair estimates) — see budgets.js
   await initBudgetTables(run);
 
+  // Billing statements (direct-bill work) — see billing.js
+  await initBillingTables(run, get);
+
   // Seed default admin if no users exist
   const row = await get('SELECT COUNT(*)::int AS count FROM users');
   if (row && row.count === 0) {
@@ -285,7 +289,7 @@ app.put('/api/jobs/:id', h(async (req, res) => {
     'assigned_to', 'notes', 'amount', 'customer_email', 'start_date',
     'date_completed', 'date_invoiced', 'project_amount', 'mitigation_amount',
     'repair_amount', 'other_amount', 'insurance_notes', 'next_steps', 'docusketch_url',
-    'owner'
+    'owner', 'billing_customer_name', 'billing_address'
   ];
   // These columns coerce '' to NULL (dates / numerics)
   const nullable = new Set([
@@ -595,6 +599,9 @@ const requireOfficeOrAdmin = (req, res, next) => {
 // ===== TRADE BUDGET ENDPOINTS (budgets.js) =====
 registerBudgetRoutes(app, { all, get, run, h, requireAuth, requireOfficeOrAdmin });
 
+// ===== BILLING STATEMENT ENDPOINTS (billing.js) =====
+registerBillingRoutes(app, { all, get, run, h, requireAuth, requireAdmin, requireOfficeOrAdmin });
+
 // ===== JOBS EXPORT (admin) — full list with per-job cost aggregates for analysis =====
 app.get('/api/jobs-export', requireAuth, requireAdmin, h(async (req, res) => {
   const rows = await all(`
@@ -675,6 +682,12 @@ app.delete('/api/jobs/:id', requireAuth, h(async (req, res) => {
   const docs = await all('SELECT file_url FROM documents WHERE job_id = $1', [jobId]);
   for (const d of docs) {
     if (d.file_url) { try { await deletePhoto(d.file_url); } catch (e) { /* ignore */ } }
+  }
+
+  // Billing statements + their PDFs
+  const statementFiles = await deleteBillingForJob(all, run, jobId);
+  for (const url of statementFiles) {
+    try { await deletePhoto(url); } catch (e) { /* ignore */ }
   }
 
   // Trade budget PDFs + rows

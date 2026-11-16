@@ -58,6 +58,9 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
     mitigation_amount: job.mitigation_amount || '',
     repair_amount: job.repair_amount || '',
     other_amount: job.other_amount || '',
+    // Billing (who the Billing Statement is addressed to)
+    billing_customer_name: job.billing_customer_name || '',
+    billing_address: job.billing_address || '',
     // Documentation
     insurance_notes: job.insurance_notes || ''
   });
@@ -268,7 +271,9 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
           mitigation_amount: editForm.mitigation_amount || null,
           repair_amount: editForm.repair_amount || null,
           other_amount: editForm.other_amount || null,
-          insurance_notes: editForm.insurance_notes
+          insurance_notes: editForm.insurance_notes,
+          billing_customer_name: editForm.billing_customer_name || null,
+          billing_address: editForm.billing_address || null
         })
       });
 
@@ -704,6 +709,30 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                     placeholder="(555) 123-4567"
                   />
                 </div>
+                {!isFieldView && (
+                  <>
+                    <div className="form-group">
+                      <label>Billing Customer Name</label>
+                      <input
+                        type="text"
+                        name="billing_customer_name"
+                        value={editForm.billing_customer_name}
+                        onChange={handleEditChange}
+                        placeholder="e.g. CP Management: Sterling Hill Condo Association"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Billing Address</label>
+                      <textarea
+                        name="billing_address"
+                        rows="2"
+                        value={editForm.billing_address}
+                        onChange={handleEditChange}
+                        placeholder={'Street / PO Box\nTown, ST ZIP'}
+                      />
+                    </div>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -719,6 +748,12 @@ function JobDetail({ job, apiUrl, onBack, currentUser, token, onDeleted }) {
                   <label>Phone</label>
                   <span>{jobData.customer_phone}</span>
                 </div>
+                {!isFieldView && (jobData.billing_customer_name || jobData.billing_address) && (
+                  <div className="info-row">
+                    <label>Bill To</label>
+                    <span style={{ whiteSpace: 'pre-line' }}>{[jobData.billing_customer_name, jobData.billing_address].filter(Boolean).join('\n')}</span>
+                  </div>
+                )}
               </>
             )}
           </div>

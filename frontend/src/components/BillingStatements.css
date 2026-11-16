@@ -1,0 +1,61 @@
+/* Billing Statements (Office/Admin) */
+.bs { display: flex; flex-direction: column; gap: 16px; max-width: 1100px; margin: 0 auto; }
+.bs-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.bs-title { margin: 4px 0; font-size: 22px; color: #1a1a2e; }
+.bs-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.1); padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.bs-card h3 { margin: 0; font-size: 17px; color: #1a1a2e; border-left: 5px solid #F26522; padding-left: 10px; }
+.bs-field { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: #333; }
+.bs-field input, .bs-field select, .bs-field textarea, .bs-misc input, .bs-table input[type=text], .bs-table select {
+  font: inherit; font-weight: 400; font-size: 14px; padding: 9px 11px; border: 1px solid #ccc; border-radius: 6px; background: #fff; box-sizing: border-box; width: 100%; }
+.bs-field textarea { resize: vertical; }
+.bs-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.bs-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.bs-stack { display: flex; flex-direction: column; gap: 8px; }
+.bs-box { background: #f9f9f9; border-radius: 6px; padding: 12px 14px; font-size: 14px; display: flex; flex-direction: column; gap: 3px; }
+.bs-k { font-size: 12px; color: #555; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.bs-muted { font-size: 13px; color: #555; font-weight: 400; }
+.bs-btn { font: inherit; font-size: 14px; padding: 10px 15px; min-height: 44px; box-sizing: border-box; border-radius: 6px; border: 1px solid #1a1a2e; background: #fff; color: #1a1a2e; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.bs-btn:disabled { opacity: .6; cursor: default; }
+.bs-btn-primary { background: #1a1a2e; color: #fff; font-weight: 600; }
+.bs-btn-dashed { border-style: dashed; align-self: flex-start; }
+.bs-btn-danger { border-color: #c0392b; color: #c0392b; }
+.bs-link { font: inherit; font-size: 14px; background: none; border: 0; padding: 0; color: #1a1a2e; text-decoration: underline; cursor: pointer; }
+.bs-x { font: inherit; font-size: 18px; width: 36px; height: 36px; border: 1px solid #ddd; border-radius: 6px; background: #fff; cursor: pointer; color: #555; }
+.bs-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.bs-spacer { flex: 1; }
+.bs-filters { display: flex; gap: 12px; flex-wrap: wrap; }
+.bs-filters .bs-field { min-width: 220px; }
+.bs-table-wrap { overflow-x: auto; border: 1px solid #eee; border-radius: 8px; background: #fff; }
+.bs-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.bs-table th { background: #1a1a2e; color: #fff; text-align: left; padding: 10px 12px; font-size: 13px; white-space: nowrap; }
+.bs-table td { padding: 8px 12px; border-top: 1px solid #eee; vertical-align: middle; }
+.bs-table .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bs-table .b, .bs-link.b { font-weight: 600; }
+.bs-row-on td { background: #fffbea; }
+.bs-click { cursor: pointer; }
+.bs-click:hover td { background: #f7f8fb; }
+.bs-num { font: inherit; font-size: 14px; width: 70px; padding: 7px 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+.bs-unit { font-size: 12px; color: #555; margin-left: 6px; }
+.bs-inline { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+.bs-calls { border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; margin: 0; display: flex; gap: 22px; flex-wrap: wrap; font-size: 14px; }
+.bs-calls legend { font-size: 13px; font-weight: 600; padding: 0 6px; }
+.bs-calls label { display: inline-flex; gap: 8px; align-items: center; min-height: 36px; }
+.bs-calls input, .bs-inline input { width: 18px; height: 18px; }
+.bs-misc { display: grid; grid-template-columns: 1fr 140px 36px; gap: 8px; align-items: center; }
+.bs-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 2px solid #1a1a2e; padding-top: 12px; }
+.bs-total-v { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+.bs-pill { display: inline-block; font-size: 12px; padding: 4px 10px; border-radius: 10px; background: #eef0f5; color: #3a3d55; white-space: nowrap; }
+.bs-pill-ok { background: #eef7ef; color: #1e5a2b; }
+.bs-pill-warn { background: #fff4e5; color: #6b3a00; }
+.bs-alert { font-size: 14px; padding: 10px 12px; border-radius: 6px; background: #f4f5f7; }
+.bs-alert-ok { background: #eef7ef; color: #1e5a2b; }
+.bs-alert-warn { background: #fff4e5; color: #6b3a00; }
+.bs-alert-error { background: #fdecea; color: #8a1c13; }
+.bs-nowrap { white-space: nowrap; }
+.bs-modal-backdrop { position: fixed; inset: 0; background: rgba(20,20,40,.55); z-index: 1000; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+.bs-modal { background: #fff; border-radius: 10px; width: 100%; max-width: 900px; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+@media (max-width: 768px) {
+  .bs-grid2, .bs-grid3 { grid-template-columns: 1fr; }
+  .bs-card { padding: 16px; }
+  .bs-misc { grid-template-columns: 1fr 100px 36px; }
+}

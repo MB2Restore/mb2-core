@@ -7,6 +7,7 @@ import JobDetail from './components/JobDetail';
 import Login from './components/Login';
 import UserManagement from './components/UserManagement';
 import Receipts from './components/Receipts';
+import BillingStatements from './components/BillingStatements';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -192,6 +193,14 @@ function App() {
         >
           Receipts
         </button>
+        {hasFullAccess && (
+          <button
+            className={`nav-btn ${view === 'billing' ? 'active' : ''}`}
+            onClick={() => { setView('billing'); fetchJobs(); }}
+          >
+            Billing Statements
+          </button>
+        )}
         {isAdmin && (
           <button
             className={`nav-btn ${view === 'users' ? 'active' : ''}`}
@@ -223,6 +232,10 @@ function App() {
 
         {view === 'receipts' && (
           <Receipts jobs={jobs} apiUrl={API_URL} currentUser={currentUser} token={token} />
+        )}
+
+        {hasFullAccess && view === 'billing' && (
+          <BillingStatements jobs={jobs} apiUrl={API_URL} token={token} currentUser={currentUser} />
         )}
 
         {isAdmin && view === 'users' && (
